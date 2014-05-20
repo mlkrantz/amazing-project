@@ -75,13 +75,6 @@ int main(int argc, char *argv[]) {
 	int ch;	
 	extern char *optarg;	// parameter of an option
 	extern int optind;		// current index of argument array
-
-
-    // for client-server communication
-	int sockfd;							// socket file descriptor
-	struct sockaddr_in serverAddr;
-	struct hostent *server;
-	
 	
 	// process options
 	while (( ch = getopt_long(argc, argv, "n:d:h:x", longOpts, 0)) != -1) {
@@ -122,6 +115,11 @@ int main(int argc, char *argv[]) {
 	difficulty = atoi(givenDifficulty);
 	numAvatars = atoi(givenNumAvatars);
 
+    // for client-server communication
+	int sockfd;							// socket file descriptor
+	struct sockaddr_in serverAddr;
+	struct hostent *server;
+
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0){
 		fprintf(stderr, "Error: Couldn't create socket.\n");
@@ -136,7 +134,8 @@ int main(int argc, char *argv[]) {
 	}
 
 	// initialize server address
-	memset(&serverAddr, 0, sizeof(serverAddr));
+	bzero((char *) &serverAddr, sizeof(serverAddr));
+	// memset(&serverAddr, 0, sizeof(serverAddr));
 	serverAddr.sin_family = AF_INET;
 	// put ip address into the ip address field
 	bcopy((char *) server->h_addr, (char *) &serverAddr.sin_addr.s_addr, server->h_length);     
@@ -150,13 +149,14 @@ int main(int argc, char *argv[]) {
 	printf("Connection established!\n");
 
     // create message send
-	AM_Message initMsg;
-	initMsg.type = htonl(AM_INIT);
-	initMsg.init.nAvatars = htonl(numAvatars);
-	initMsg.init.Difficulty = htonl(difficulty);
+	AM_Message *initMsg = calloc(1, sizeof(AM_Message));
+	initMsg->type = htonl(AM_INIT);
+	initMsg->init.nAvatars = htonl(numAvatars);
+	initMsg->init.Difficulty = htonl(difficulty);
 
 	// try to send AM_INIT message to server
-	if (send(sockfd, &initMsg, sizeof(initMsg), 0) == -1){
+	printf("Sending AM_INIT message to server...\n");
+	if (send(sockfd, initMsg, sizeof(AM_Message), 0) == -1){
 	    fprintf(stderr, "Error: Failed to send message\n");
 	    exit(EXIT_FAILURE);
 	}
@@ -170,29 +170,35 @@ int main(int argc, char *argv[]) {
 	recvSize = recv(sockfd, &serverMessage, sizeof(serverMessage), 0);
 	if ( recvSize < 0){
 		fprintf(stderr, "Error: Couldn't receive message from server.\n");
+		free(initMsg);
 		exit(EXIT_FAILURE);
 	}
 	if(recvSize == 0){
 	    fprintf(stderr, "Error: Server connection was closed.\n");
+	    free(initMsg);
 	    exit(EXIT_FAILURE);
 	} 
 	
 	// now the connection can be closed
 	close(sockfd);
+	free(initMsg);
 
 	if (IS_AM_ERROR(serverMessage.type)){
 		fprintf(stderr, "Error message received from server\n");
 	}
 	else{
-	    printf("AM_INIT_OK message successfully received\n");
+	    printf("AM_INIT_OK message from server successfully received\n");
 	}
 
     // create the log file
-    int userNameLen = strlen(getenv("USER")) ;
-    char *userName = calloc(userNameLen + 1, sizeof(char));
-    userName = getenv("USER");
+    char *userName = getenv("USER");
+
     char *logFileName = NULL;
-    logFileName = (char *)malloc((strlen("Amazing___.log") + strlen(userName))*sizeof(char) + sizeof(int)*2 + 1);
+    logFileName = (char *)malloc((strlen("Amazing___.log")*sizeof(char) + strlen(userName))*sizeof(char) + sizeof(int)*2 + 1);
+    if (!logFileName) {
+    	fprintf(stderr, "Error: Couldn't allocate memory for logFileName.\n");
+    	exit(EXIT_FAILURE);
+    }
     sprintf(logFileName, "Amazing_%s_%d_%d.log", userName, numAvatars, difficulty);
     
     FILE *logFile;
@@ -202,6 +208,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
     
+    // get time info
     time_t rawCurrTime;
     struct tm *timeinfo;
 
