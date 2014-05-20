@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
     fprintf(logFile, "%s, %d, %s", userName, ntohl(serverMessage.init_ok.MazePort), asctime(timeinfo));
     fclose(logFile);
     printf("Log file created as: %s\n", logFileName);
-
+    free(logFileName);
 	return 0;
 }
 
