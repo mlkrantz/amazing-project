@@ -4,7 +4,7 @@
  * Author:
  * Date: 05/19/14
  *
- * Input: None
+ * Input: None.
  * 	
  *
  * Command line options:
@@ -23,7 +23,7 @@
  */
 /* ========================================================================== */
 // ---------------- Open Issues
-// None
+// None.
 
 // ---------------- System includes e.g., <stdio.h>
 #include <stdio.h>                           
@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <strings.h>  				// bcopy()
+#include <strings.h>  // bcopy()
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -73,44 +73,37 @@ int main(int argc, char *argv[]) {
 	
 	// for command line option processing
 	int ch;	
-	extern char *optarg;		// parameter of an option
+	extern char *optarg;	// parameter of an option
 	extern int optind;		// current index of argument array
-
-
-    	// for client-server communication
-	int sockfd;					// socket file descriptor
-	struct sockaddr_in serverAddr;
-	struct hostent *server;
-	
 	
 	// process options
-	while ((ch = getopt_long(argc, argv, "n:d:h:x", longOpts, 0)) != -1) {
+	while (( ch = getopt_long(argc, argv, "n:d:h:x", longOpts, 0)) != -1) {
 		switch(ch){
 			case 'n':
-			givenNumAvatars = optarg;			
-			break;
+				givenNumAvatars = optarg;			
+				break;
 
 			case 'd':
-			givenDifficulty = optarg;
-			break;
+				givenDifficulty = optarg;
+				break;
 			
 			case 'h':
-			hostname = optarg;
-			break;
-			
+				hostname = optarg;
+				break;
 			case 'x':
-			help = 1;
-			break;
+				help = 1;
+				break;
 
 			// unknown options
 			default:
-			fprintf(stderr, "%s\n", USAGE);
-			exit(EXIT_FAILURE);
-			break;
+				fprintf(stderr, "%s\n", USAGE);
+				exit(EXIT_FAILURE);
+				break;
 		}
 	}
 
 	if (help) {
+		userHelp();
 		userHelp();
 		exit(EXIT_SUCCESS);
 	}
@@ -121,6 +114,11 @@ int main(int argc, char *argv[]) {
 	// convert valid inputs to int
 	difficulty = atoi(givenDifficulty);
 	numAvatars = atoi(givenNumAvatars);
+
+    // for client-server communication
+	int sockfd;							// socket file descriptor
+	struct sockaddr_in serverAddr;
+	struct hostent *server;
 
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0){
@@ -136,27 +134,29 @@ int main(int argc, char *argv[]) {
 	}
 
 	// initialize server address
-	memset(&serverAddr, 0, sizeof(serverAddr));
+	bzero((char *) &serverAddr, sizeof(serverAddr));
+	// memset(&serverAddr, 0, sizeof(serverAddr));
 	serverAddr.sin_family = AF_INET;
 	// put ip address into the ip address field
 	bcopy((char *) server->h_addr, (char *) &serverAddr.sin_addr.s_addr, server->h_length);     
 	serverAddr.sin_port = htons(atoi(AM_SERVER_PORT));
 
-    	// Connect to the server
+    // Connect to the server
 	if (connect(sockfd, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) < 0){
 		fprintf(stderr, "Error: Failed to connect to server.\n");
 		exit(EXIT_FAILURE);
 	}
 	printf("Connection established!\n");
 
-    	// create message send
-	AM_Message initMsg;
-	initMsg.type = htonl(AM_INIT);
-	initMsg.init.nAvatars = htonl(numAvatars);
-	initMsg.init.Difficulty = htonl(difficulty);
+    // create message send
+	AM_Message *initMsg = calloc(1, sizeof(AM_Message));
+	initMsg->type = htonl(AM_INIT);
+	initMsg->init.nAvatars = htonl(numAvatars);
+	initMsg->init.Difficulty = htonl(difficulty);
 
 	// try to send AM_INIT message to server
-	if (send(sockfd, &initMsg, sizeof(initMsg), 0) == -1){
+	printf("Sending AM_INIT message to server...\n");
+	if (send(sockfd, initMsg, sizeof(AM_Message), 0) == -1){
 	    fprintf(stderr, "Error: Failed to send message\n");
 	    exit(EXIT_FAILURE);
 	}
@@ -170,61 +170,66 @@ int main(int argc, char *argv[]) {
 	recvSize = recv(sockfd, &serverMessage, sizeof(serverMessage), 0);
 	if (recvSize < 0){
 		fprintf(stderr, "Error: Couldn't receive message from server.\n");
+		free(initMsg);
 		exit(EXIT_FAILURE);
 	}
 	if (recvSize == 0){
 	    fprintf(stderr, "Error: Server connection was closed.\n");
+	    free(initMsg);
 	    exit(EXIT_FAILURE);
 	} 
 	
 	// now the connection can be closed
 	close(sockfd);
+	free(initMsg);
 
 	if (IS_AM_ERROR(serverMessage.type)){
 		fprintf(stderr, "Error message received from server\n");
 	}
 	else{
-	    printf("AM_INIT_OK message successfully received\n");
+	    printf("AM_INIT_OK message from server successfully received\n");
 	}
 
-	// create the log file
-	int userNameLen = strlen(getenv("USER")) ;
-	char *userName = calloc(userNameLen + 1, sizeof(char));
-	userName = getenv("USER");
-	char *logFileName = NULL;
-	logFileName = (char *)malloc((strlen("Amazing___.log") + strlen(userName))*sizeof(char) + sizeof(int)*2 + 1);
-	sprintf(logFileName, "Amazing_%s_%d_%d.log", userName, numAvatars, difficulty);
+    // create the log file
+    char *userName = getenv("USER");
+    char *logFileName = NULL;
+    logFileName = (char *)malloc((strlen("Amazing___.log")*sizeof(char) + strlen(userName))*sizeof(char) + sizeof(int)*2 + 1);
+    if (!logFileName) {
+    	fprintf(stderr, "Error: Couldn't allocate memory for logFileName.\n");
+    	exit(EXIT_FAILURE);
+    }
+    sprintf(logFileName, "Amazing_%s_%d_%d.log", userName, numAvatars, difficulty);
     
-	FILE *logFile;
-	if ((logFile = fopen(logFileName, "a"))== NULL){
-		fprintf(stderr, "Error: Couldn't create log file, %s.\n", logFileName);
-		free(logFileName);
-		exit(EXIT_FAILURE);
-	}
+    FILE *logFile;
+    if ((logFile = fopen(logFileName, "a"))== NULL){
+        fprintf(stderr, "Error: Couldn't create log file, %s.\n", logFileName);
+        free(logFileName);
+        exit(EXIT_FAILURE);
+    }
     
-	time_t rawCurrTime;
-	struct tm *timeinfo;
+    // get time info
+    time_t rawCurrTime;
+    struct tm *timeinfo;
 
-	time (&rawCurrTime);
-	timeinfo = localtime(&rawCurrTime);
-	fprintf(logFile, "%s, %d, %s", userName, ntohl(serverMessage.init_ok.MazePort), asctime(timeinfo));
-	fclose(logFile);
-	printf("Log file created as: %s\n", logFileName);
-	free(logFileName);
+    time (&rawCurrTime);
+    timeinfo = localtime(&rawCurrTime);
+    fprintf(logFile, "%s, %d, %s", userName, ntohl(serverMessage.init_ok.MazePort), asctime(timeinfo));
+    fclose(logFile);
+    printf("Log file created as: %s\n", logFileName);
+    free(logFileName);
 	return 0;
 }
 
 
 /*
  * Check that arguments are valid. If successful return 1, else 0.
- *
  */
 int checkArgs(int argc, char givenDifficulty[], char givenNumAvatars[]) {
 	if (argc != 7) {
 		fprintf(stderr, "%s\n", USAGE);
 		return 0;
 	}
-	if (!givenDifficulty || !givenNumAvatars){
+	if (!givenDifficulty || !givenNumAvatars) {
 		fprintf(stderr, "%s\n", USAGE);
 		return 0;
 	}
@@ -256,7 +261,6 @@ int checkArgs(int argc, char givenDifficulty[], char givenNumAvatars[]) {
 
 /*
  * Checks that a user input is numerical. Returns 1 if numerical, else 0.
- *
  */
 int isNumerical(char inputToCheck[]) {
     for (int i = 0; i < strlen(inputToCheck); i++) {
@@ -270,7 +274,6 @@ int isNumerical(char inputToCheck[]) {
 
 /*
  * Prints help information, including version and usage.
- *
  */
 void userHelp() {
 	printf("The Amazing Project\n");
@@ -278,3 +281,4 @@ void userHelp() {
 	printf("Version 1.0\n");
 	printf("%s\n", USAGE);
 }
+
