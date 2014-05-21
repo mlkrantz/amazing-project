@@ -60,6 +60,8 @@ void cleanup(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth]
 
 int main(int argc, char *argv[]) {
 
+	printf("%s %s %s %s %s %s %s %s\n", argv[1],argv[2],argv[3],argv[4],argv[5],argv[6],argv[7],argv[8]);
+
 	// Local variables
 	int avatarID = atoi(argv[1]);
 	int numAvatars = atoi(argv[2]);
@@ -69,7 +71,7 @@ int main(int argc, char *argv[]) {
 	char *logfile = argv[6];
 	int mazeWidth = atoi(argv[7]);
 	int mazeHeight = atoi(argv[8]);
-
+	
 	// Store last valid move
 	int prevMove = -1;
 
@@ -121,7 +123,7 @@ int main(int argc, char *argv[]) {
 	serverAddr.sin_family = AF_INET;
 	// Put ip address into the ip address field
 	bcopy(ipAddress, (char *) &serverAddr.sin_addr.s_addr, strlen(ipAddress));
-	serverAddr.sin_port = ntohs(mazePort);
+	serverAddr.sin_port = htons(mazePort);
 
 	// Connect to the server
 	if (connect(sockfd, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) < 0) {
