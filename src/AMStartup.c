@@ -168,12 +168,12 @@ int main(int argc, char *argv[]) {
 	// try to receive AM_INIT_OK message
 	int recvSize = 0;
 	recvSize = recv(sockfd, &serverMessage, sizeof(serverMessage), 0);
-	if (recvSize < 0){
+	if ( recvSize < 0){
 		fprintf(stderr, "Error: Couldn't receive message from server.\n");
 		free(initMsg);
 		exit(EXIT_FAILURE);
 	}
-	if (recvSize == 0){
+	if(recvSize == 0){
 	    fprintf(stderr, "Error: Server connection was closed.\n");
 	    free(initMsg);
 	    exit(EXIT_FAILURE);
@@ -214,6 +214,55 @@ int main(int argc, char *argv[]) {
     time (&rawCurrTime);
     timeinfo = localtime(&rawCurrTime);
     fprintf(logFile, "%s, %d, %s", userName, ntohl(serverMessage.init_ok.MazePort), asctime(timeinfo));
+
+    // make child processes
+    pid_t childPID;
+    char *childArgs[9];
+    for (int i = 1; i <= numAvatars; i++) {
+    	childPID = fork();
+    	if (childPID >= 0) {
+			char avatarID[2];
+    		sprintf(avatarID, "%d", i);
+    		char IPaddr[15];
+    		short convertedIP = ntohs(serverAddr.sin_addr.s_addr)
+    		sprintf(IPaddr, "%d", convertedIP);
+    		char mazePort[10];
+    		short convertedMP = ntohs(serverMessage.init_ok.MazeWidth);
+    		sprintf(mazePort, "%d", convertedMP);
+    		char mazeWidth[10];
+    		short convertedMW = ntohs(serverMessage.init_ok.MazeWidth);
+    		sprintf(mazeWidth, "%d", convertedMW);
+    		char mazeHeight[10];
+    		short convertedMH = ntohs(serverMessage.init_ok.MazeHeight);
+    		sprintf(mazeHeight, "%d", convertedMH);
+    		fprintf(stderr, "Hello I'm a child and my PID is %d\n", getpid());
+    		childArgs[0] = "./avatar";
+    		childArgs[1] = avatarID;
+    		childArgs[2] = givenNumAvatars;
+    		childArgs[3] = givenDifficulty;
+    		childArgs[4] = IPaddr;
+    		childArgs[5] = mazePort;
+    		childArgs[6] = logFileName;
+    		childArgs[7] = mazeWidth;
+    		childArgs[8] = mazeHeight;
+    		childArgs[9] = NULL;
+
+    		if (childPID == 0) {
+	    		// inside child process
+	    		execve("./avatar", childArgs, NULL);
+	    		exit(EXIT_SUCCESS);
+    		}
+    		else {
+    			// inside parent process
+    		}
+    	}
+    	else {
+    		fprintf(stderr, "Error: Failed to fork.\n");
+    		break;
+    	}
+    }
+
+
     fclose(logFile);
     printf("Log file created as: %s\n", logFileName);
     free(logFileName);
