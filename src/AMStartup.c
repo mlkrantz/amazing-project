@@ -43,7 +43,7 @@
 #include "amazing.h"
 
 // ---------------- Constant definitions
-static const char USAGE[] = "Usage: ./AMStartup -n nAvatars -d Difficulty -h Hostname [--help]\n";
+static const char USAGE[] = "Usage: ./AMStartup -n nAvatars -d Difficulty -h Hostname [--help]";
 
 // ---------------- Macro definitions
 #define VERBOSE 0 		// for debugging
@@ -68,8 +68,8 @@ int main(int argc, char *argv[]) {
 	int numAvatars;		// 1-AM_MAX_AVATAR
 	int difficulty;		// 0-AM_MAX_DIFFICULTY
 	char *hostname;
-	char *givenNumAvatars;
-	char *givenDifficulty;
+	char *givenNumAvatars = NULL;
+	char *givenDifficulty = NULL;
 	
 	// for command line option processing
 	int ch;	
@@ -192,7 +192,6 @@ int main(int argc, char *argv[]) {
 
     // create the log file
     char *userName = getenv("USER");
-
     char *logFileName = NULL;
     logFileName = (char *)malloc((strlen("Amazing___.log")*sizeof(char) + strlen(userName))*sizeof(char) + sizeof(int)*2 + 1);
     if (!logFileName) {
@@ -227,6 +226,10 @@ int main(int argc, char *argv[]) {
  */
 int checkArgs(int argc, char givenDifficulty[], char givenNumAvatars[]) {
 	if (argc != 7) {
+		fprintf(stderr, "%s\n", USAGE);
+		return 0;
+	}
+	if (!givenDifficulty || !givenNumAvatars) {
 		fprintf(stderr, "%s\n", USAGE);
 		return 0;
 	}
