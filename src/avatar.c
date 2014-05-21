@@ -132,6 +132,7 @@ int main(int argc, char *argv[]) {
 
 	if (send(sockfd, &readyMsg, sizeof(readyMsg), 0) == -1) {
 		fprintf(stderr, "Error: Failed to send message\n");
+		close(sockfd);
 		exit(EXIT_FAILURE);
         }
 
@@ -139,6 +140,7 @@ int main(int argc, char *argv[]) {
 	FILE *log = fopen(logfile, "a");
 	if (log == NULL) {
 		fprintf(stderr, "Error: could not open log file\n");
+		close(sockfd);
 		exit(EXIT_FAILURE);
 	}
 
@@ -154,11 +156,13 @@ int main(int argc, char *argv[]) {
         	recvSize = recv(sockfd, &serverMessage, sizeof(serverMessage), 0);
         	if (recvSize < 0) {
                 	fprintf(stderr, "Error: Couldn't receive message from server\n");
+			close(sockfd);
 			fclose(log);
                 	exit(EXIT_FAILURE);
         	}
         	if (recvSize == 0) {
             		fprintf(stderr, "Error: Server connection was closed\n");
+			close(sockfd);
             		exit(EXIT_FAILURE);
         	}
 
@@ -166,6 +170,7 @@ int main(int argc, char *argv[]) {
 		if (IS_AM_ERROR(serverMessage.type)) {
                 	fprintf(stderr, "Error message received from server\n");
 			fclose(log);
+			close(sockfd);
 			exit(EXIT_FAILURE);
         	}
 
@@ -192,6 +197,7 @@ int main(int argc, char *argv[]) {
 
         			if (send(sockfd, &moveMsg, sizeof(moveMsg), 0) == -1) {
                 			fprintf(stderr, "Error: Failed to send message\n");
+					close(sockfd);
 					fclose(log);
                 			exit(EXIT_FAILURE);
         			}
@@ -201,6 +207,7 @@ int main(int argc, char *argv[]) {
 		// Success message
 		if (serverMessage.type == AM_MAZE_SOLVED) {
 			// LOG SUCCESS
+			printf("Success!\n");
 			break;
 		}
 
