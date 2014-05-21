@@ -224,7 +224,7 @@ int main(int argc, char *argv[]) {
 			char avatarID[2];
     		sprintf(avatarID, "%d", i);
     		char IPaddr[15];
-    		short convertedIP = ntohs(serverAddr.sin_addr.s_addr)
+    		short convertedIP = ntohs(serverAddr.sin_addr.s_addr);
     		sprintf(IPaddr, "%d", convertedIP);
     		char mazePort[10];
     		short convertedMP = ntohs(serverMessage.init_ok.MazeWidth);
