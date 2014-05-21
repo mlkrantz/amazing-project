@@ -53,8 +53,6 @@ int getPrevDir(int prevX, int prevY, int newX, int newY);
 int determineNextMove(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth]
 [mazeHeight], XYPos **prevXY, XYPos *newXY, int numAvatars, int avatarID, 
 int *ignoreList, int prevMove);
-void cleanup(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth]
-[mazeHeight], int numAvatars, XYPos **prevXY);
 
 /* ========================================================================== */
 
@@ -77,11 +75,10 @@ int main(int argc, char *argv[]) {
 	Cell *grid[mazeWidth][mazeHeight];
 	for (int i = 0; i < mazeWidth; i++) {
 		for (int j = 0; j < mazeHeight; j++) {
-			Cell *currCell = (Cell*) malloc(sizeof(Cell));
+			Cell *currCell = grid[i][j];
 			currCell->avatarNum = 0;
 			currCell->traceDir = -1;
 			currCell->traceOrig = -1;
-			grid[i][j] = currCell;
 		}
 	}
 
@@ -100,10 +97,9 @@ int main(int argc, char *argv[]) {
 	// Previous XY positions
 	XYPos *prevXY[numAvatars];
 	for (int i = 0; i < numAvatars; i++) {
-		XYPos *prevPos = (XYPos*) malloc(sizeof(XYPos));
+		XYPos *prevPos = prevXY[i];
 		prevPos->x = -1;
 		prevPos->y = -1;
-		prevXY[i] = prevPos;
 	}
 
         // For client-server communication
@@ -113,8 +109,7 @@ int main(int argc, char *argv[]) {
 	// Connect to server
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0) {
-                fprintf(stderr, "Error: Couldn't create socket\n");
-		cleanup(mazeWidth, mazeHeight, grid, numAvatars, prevXY);
+                fprintf(stderr, "Error: Couldn't create socket.\n");
                 exit(EXIT_FAILURE);
         }
 	memset(&serverAddr, 0, sizeof(serverAddr));
@@ -125,8 +120,7 @@ int main(int argc, char *argv[]) {
 
 	// Connect to the server
 	if (connect(sockfd, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) < 0) {
-		fprintf(stderr, "Error: Failed to connect to server\n");
-		cleanup(mazeWidth, mazeHeight, grid, numAvatars, prevXY);
+		fprintf(stderr, "Error: Failed to connect to server.\n");
 		exit(EXIT_FAILURE);
 	}
 	printf("Connection established!\n");
@@ -138,8 +132,6 @@ int main(int argc, char *argv[]) {
 
 	if (send(sockfd, &readyMsg, sizeof(readyMsg), 0) == -1) {
 		fprintf(stderr, "Error: Failed to send message\n");
-		cleanup(mazeWidth, mazeHeight, grid, numAvatars, prevXY);
-		close(sockfd);
 		exit(EXIT_FAILURE);
         }
 
@@ -147,8 +139,6 @@ int main(int argc, char *argv[]) {
 	FILE *log = fopen(logfile, "a");
 	if (log == NULL) {
 		fprintf(stderr, "Error: could not open log file\n");
-		cleanup(mazeWidth, mazeHeight, grid, numAvatars, prevXY);
-		close(sockfd);
 		exit(EXIT_FAILURE);
 	}
 
@@ -164,25 +154,18 @@ int main(int argc, char *argv[]) {
         	recvSize = recv(sockfd, &serverMessage, sizeof(serverMessage), 0);
         	if (recvSize < 0) {
                 	fprintf(stderr, "Error: Couldn't receive message from server\n");
-			cleanup(mazeWidth, mazeHeight, grid, numAvatars, prevXY);
-			close(sockfd);
 			fclose(log);
                 	exit(EXIT_FAILURE);
         	}
         	if (recvSize == 0) {
             		fprintf(stderr, "Error: Server connection was closed\n");
-			cleanup(mazeWidth, mazeHeight, grid, numAvatars, prevXY);
-			close(sockfd);
-			fclose(log);
             		exit(EXIT_FAILURE);
         	}
 
 		// Check for error message
 		if (IS_AM_ERROR(serverMessage.type)) {
                 	fprintf(stderr, "Error message received from server\n");
-			cleanup(mazeWidth, mazeHeight, grid, numAvatars, prevXY);
 			fclose(log);
-			close(sockfd);
 			exit(EXIT_FAILURE);
         	}
 
@@ -209,8 +192,6 @@ int main(int argc, char *argv[]) {
 
         			if (send(sockfd, &moveMsg, sizeof(moveMsg), 0) == -1) {
                 			fprintf(stderr, "Error: Failed to send message\n");
-					cleanup(mazeWidth, mazeHeight, grid, numAvatars, prevXY);
-					close(sockfd);
 					fclose(log);
                 			exit(EXIT_FAILURE);
         			}
@@ -220,7 +201,6 @@ int main(int argc, char *argv[]) {
 		// Success message
 		if (serverMessage.type == AM_MAZE_SOLVED) {
 			// LOG SUCCESS
-			printf("Success!\n");
 			break;
 		}
 
@@ -229,7 +209,6 @@ int main(int argc, char *argv[]) {
 	// Close the connection
 	close(sockfd);
 	// Clean up
-	cleanup(mazeWidth, mazeHeight, grid, numAvatars, prevXY);
 	fclose(log);
 	exit(EXIT_SUCCESS);
 
@@ -391,24 +370,5 @@ int determineNextMove(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth][mazeH
 
 	// Shouldn't get here
 	return M_NULL_MOVE;
-
-}
-
-void cleanup(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth][mazeHeight], int numAvatars, 
-XYPos **prevXY) {
-
-	// Clean up grid
-	for (int i = 0; i < mazeWidth; i++) {
-                for (int j = 0; j < mazeHeight; j++) {
-                        // Free all cells
-                        Cell *currCell = grid[i][j];
-			free(currCell);
-                }
-        }
-	// Clean up position array
-	for (int i = 0; i < numAvatars; i++) {
-		XYPos *prevPos = prevXY[i];
-		free(prevPos);
-	}	
 
 }
