@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
 
     // create message send
 	AM_Message *initMsg = calloc(1, sizeof(AM_Message));
-	initMsg->type = htohl(AM_INIT);
+	initMsg->type = htonl(AM_INIT);
 	initMsg->init.nAvatars = htonl(numAvatars);
 	initMsg->init.Difficulty = htonl(difficulty);
 
@@ -225,17 +225,17 @@ int main(int argc, char *argv[]) {
     		sprintf(avatarID, "%d", i);
     		char IPaddr[15];
     		// long convertedIP = ntohl(serverAddr.sin_addr.s_addr);
-    		// sprintf(IPaddr, "%d", convertedIP);
-    		IPaddr = (char *)serverAddr.sin_addr.s_addr;
+    		sprintf(IPaddr, "%u", serverAddr.sin_addr.s_addr);
+    		// IPaddr = serverAddr.sin_addr.s_addr;
     		char mazePort[10];
-    		long convertedMP = ntohl(serverMessage.init_ok.MazePort);
-    		sprintf(mazePort, "%d", convertedMP);
+    		unsigned long convertedMP = ntohl(serverMessage.init_ok.MazePort);
+    		sprintf(mazePort, "%lu", convertedMP);
     		char mazeWidth[10];
-    		long convertedMW = ntohl(serverMessage.init_ok.MazeWidth);
-    		sprintf(mazeWidth, "%d", convertedMW);
+    		unsigned long convertedMW = ntohl(serverMessage.init_ok.MazeWidth);
+    		sprintf(mazeWidth, "%lu", convertedMW);
     		char mazeHeight[10];
-    		long convertedMH = ntohl(serverMessage.init_ok.MazeHeight);
-    		sprintf(mazeHeight, "%d", convertedMH);
+    		unsigned long convertedMH = ntohl(serverMessage.init_ok.MazeHeight);
+    		sprintf(mazeHeight, "%lu", convertedMH);
     		fprintf(stderr, "Hello I'm a child and my PID is %d\n", getpid());
     		childArgs[0] = "./avatar";
     		childArgs[1] = avatarID;
