@@ -168,12 +168,12 @@ int main(int argc, char *argv[]) {
 	// try to receive AM_INIT_OK message
 	int recvSize = 0;
 	recvSize = recv(sockfd, &serverMessage, sizeof(serverMessage), 0);
-	if ( recvSize < 0){
+	if (recvSize < 0){
 		fprintf(stderr, "Error: Couldn't receive message from server.\n");
 		free(initMsg);
 		exit(EXIT_FAILURE);
 	}
-	if(recvSize == 0){
+	if (recvSize == 0){
 	    fprintf(stderr, "Error: Server connection was closed.\n");
 	    free(initMsg);
 	    exit(EXIT_FAILURE);
