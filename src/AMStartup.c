@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
 	} 
 	
 	// now the connection can be closed
-	close(sockfd);
+	// close(sockfd);
 	free(initMsg);
 
 	if (IS_AM_ERROR(serverMessage.type)){
@@ -218,14 +218,15 @@ int main(int argc, char *argv[]) {
     // make child processes
     pid_t childPID;
     char *childArgs[9];
-    for (int i = 1; i <= numAvatars; i++) {
+    for (int i = 0; i < numAvatars; i++) {
     	childPID = fork();
     	if (childPID >= 0) {
 			char avatarID[2];
     		sprintf(avatarID, "%d", i);
-    		char IPaddr[15];
-    		// long convertedIP = ntohl(serverAddr.sin_addr.s_addr);
-    		sprintf(IPaddr, "%u", serverAddr.sin_addr.s_addr);
+    		// char IPaddr[15];
+    		// unsigned long convertedIP = ntohl(serverAddr.sin_addr.s_addr);
+    		// sprintf(IPaddr, "%lu", server->h_addr_list[0]);
+    		char *IPaddr = server->h_addr_list[0];
     		// IPaddr = serverAddr.sin_addr.s_addr;
     		char mazePort[10];
     		unsigned long convertedMP = ntohl(serverMessage.init_ok.MazePort);
@@ -267,6 +268,8 @@ int main(int argc, char *argv[]) {
     fclose(logFile);
     printf("Log file created as: %s\n", logFileName);
     free(logFileName);
+
+   	close(sockfd);
 	return 0;
 }
 
