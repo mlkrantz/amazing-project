@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
     sprintf(logFileName, "Amazing_%s_%d_%d.log", userName, numAvatars, difficulty);
     
     FILE *logFile;
-    if ((logFile = fopen(logFileName, "a"))== NULL){
+    if ((logFile = fopen(logFileName, "w"))== NULL){
         fprintf(stderr, "Error: Couldn't create log file, %s.\n", logFileName);
         free(logFileName);
         exit(EXIT_FAILURE);

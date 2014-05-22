@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
 
 	// Maze is now running
 	while (1) {
-
+		
 		// Message to receive
 		AM_Message serverMessage;
         	memset(&serverMessage, 0, sizeof(serverMessage));
@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
         	}
 
 		// Check for error message
-		if (IS_AM_ERROR(serverMessage.type)) {
+		if (IS_AM_ERROR(ntohl(serverMessage.type))) {
                 	fprintf(stderr, "Error message received from server\n");
 			cleanup(mazeWidth, mazeHeight, grid, numAvatars, prevXY);
 			fclose(log);
@@ -189,9 +189,11 @@ int main(int argc, char *argv[]) {
         	}
 
 		// Turn message
-		if (serverMessage.type == AM_AVATAR_TURN) {
+		if (ntohl(serverMessage.type) == AM_AVATAR_TURN) {
+			
 			// If current avatar's turn
-			if (serverMessage.avatar_turn.TurnId == avatarID) {
+			if (ntohl(serverMessage.avatar_turn.TurnId) == avatarID) {
+				
 				// Update grid
 				XYPos *newXY = serverMessage.avatar_turn.Pos;
 				updateGrid(mazeWidth, mazeHeight, grid, prevXY, newXY, numAvatars,
@@ -220,7 +222,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		// Success message
-		if (serverMessage.type == AM_MAZE_SOLVED) {
+		if (ntohl(serverMessage.type) == AM_MAZE_SOLVED) {
 			// LOG SUCCESS
 			printf("Success!\n");
 			break;
