@@ -52,7 +52,7 @@ avatarID, int *ignoreList);
 int getPrevDir(int prevX, int prevY, int newX, int newY);
 int determineNextMove(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth]
 [mazeHeight], XYPos **prevXY, XYPos *newXY, int numAvatars, int avatarID, 
-int *ignoreList, int prevMove);
+int *ignoreList, int *prevMove);
 void cleanup(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth]
 [mazeHeight], int numAvatars, XYPos **prevXY);
 
@@ -201,7 +201,8 @@ int main(int argc, char *argv[]) {
 
 				// Determine next move
 				int direction = determineNextMove(mazeWidth, mazeHeight, grid,
-				prevXY, newXY, numAvatars, avatarID, ignoreList, prevMove);
+				prevXY, newXY, numAvatars, avatarID, ignoreList, &prevMove);
+				printf("Avatar %d went in direction %d\n", avatarID, direction);
 
 				// LOG PROGRESS
 
@@ -218,6 +219,12 @@ int main(int argc, char *argv[]) {
 					fclose(log);
                 			exit(EXIT_FAILURE);
         			}
+
+				// Update arrays
+				for (int i = 0; i < numAvatars; i++) {
+					prevXY[i]->x = ntohl(newXY[i].x);
+					prevXY[i]->y = ntohl(newXY[i].y);
+				}
 			}
 		}
 
@@ -305,7 +312,7 @@ int getPrevDir(int prevX, int prevY, int newX, int newY) {
 	if (newX > prevX && newY == prevY) {
 		return M_EAST;
 	}
-
+	
 	// No movement
 	return M_NULL_MOVE;
 
@@ -317,7 +324,7 @@ int getPrevDir(int prevX, int prevY, int newX, int newY) {
  *
  */
 int determineNextMove(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth][mazeHeight], XYPos 
-**prevXY, XYPos *newXY, int numAvatars, int avatarID, int *ignoreList, int prevMove) {
+**prevXY, XYPos *newXY, int numAvatars, int avatarID, int *ignoreList, int *prevMove) {
 
 	// Get current position
 	int currX = ntohl(newXY[avatarID].x);
@@ -340,7 +347,8 @@ int determineNextMove(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth][mazeH
 		for (int i = 0; i < numAvatars; i++) {
 			// Follow if not on ignore list
 			if (currCell->traceOrig == i && !ignoreList[i]) {
-				prevMove = currCell->traceDir;
+				printf("Followed trace...\n");
+				*prevMove = currCell->traceDir;
 				return currCell->traceDir;
 			}
 		}
@@ -351,8 +359,8 @@ int determineNextMove(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth][mazeH
 	int prevY = prevXY[avatarID]->y;
 
 	// First move is always north
-	if (prevX == -1 || prevY == -1 || prevMove == -1) {
-		prevMove = M_NORTH;
+	if (prevX == -1 && prevY == -1 && *prevMove == -1) {
+		*prevMove = M_NORTH;
 		return M_NORTH;
 	}
 
@@ -362,33 +370,33 @@ int determineNextMove(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth][mazeH
 		// Turn left
 		switch (prevDir) {
 		    case M_NORTH:
-			prevMove = M_WEST;
+			*prevMove = M_WEST;
 			return M_WEST;
 		    case M_EAST:
-			prevMove = M_NORTH;
+			*prevMove = M_NORTH;
 			return M_NORTH;
 		    case M_SOUTH:
-			prevMove = M_EAST;
+			*prevMove = M_EAST;
 			return M_EAST;
 		    case M_WEST:
-			prevMove = M_WEST;
+			*prevMove = M_WEST;
 			return M_SOUTH;
 		}
 	}
 	else {
 		// Turn right
-		switch (prevMove) {
+		switch (*prevMove) {
 		    case M_NORTH:
-			prevMove = M_EAST;
+			*prevMove = M_EAST;
 			return M_EAST;
 		    case M_EAST:
-			prevMove = M_SOUTH;
+			*prevMove = M_SOUTH;
 			return M_SOUTH;
 		    case M_SOUTH:
-			prevMove = M_WEST;
+			*prevMove = M_WEST;
 			return M_WEST;
 		    case M_WEST:
-			prevMove = M_NORTH;
+			*prevMove = M_NORTH;
 			return M_NORTH;
 		}
 	}
