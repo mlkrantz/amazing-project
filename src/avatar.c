@@ -379,7 +379,7 @@ int determineNextMove(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth][mazeH
 			*prevMove = M_EAST;
 			return M_EAST;
 		    case M_WEST:
-			*prevMove = M_WEST;
+			*prevMove = M_SOUTH;
 			return M_SOUTH;
 		}
 	}
