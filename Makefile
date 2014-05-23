@@ -6,7 +6,7 @@ AMStartup: AMStartup.o avatar.o
 	@echo "Building AMStartup"
 
 avatar.o: src/avatar.c
-	@$(CC) $(CFLAGS) -o avatar src/avatar.c
+	@$(CC) $(CFLAGS) -o avatar src/avatar.c ‘pkg-config --cflags --libs gtk+-2.0‘
 	@echo "Building avatar"
 
 AMStartup.o: src/AMStartup.c src/amazing.h
