@@ -16,7 +16,7 @@
 // ---------------- Prerequisites e.g., Requires "math.h"
 
 // ---------------- Constants
-
+#define CELL_SIZE 11 //side length of cells, 10 for actual cell, 1 for border
 // ---------------- Structures/Types
 
 typedef struct Cell {
