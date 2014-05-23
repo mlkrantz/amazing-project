@@ -112,7 +112,6 @@ int main(int argc, char *argv[]) {
 
 	if (help) {
 		userHelp();
-		userHelp();
 		exit(EXIT_SUCCESS);
 	}
 	if (!checkArgs(argc, givenDifficulty, givenNumAvatars)) {
