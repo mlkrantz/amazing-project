@@ -46,7 +46,10 @@
 static const char USAGE[] = "Usage: ./AMStartup -n nAvatars -d Difficulty -h Hostname [--help]";
 
 // ---------------- Macro definitions
-#define VERBOSE 0 		// for debugging
+#define VERBOSE 0 			// for debugging
+#define CHILD_EXEC "./avatar"
+#define NUM_EXEC_ARGS 9  	// number of arguments needed for CHILD_EXEC
+#define MAX_ID_LEN 1 		// max length of avatar ID
 
 // ---------------- Structures/Types
 struct option longOpts[] = {
@@ -57,8 +60,13 @@ struct option longOpts[] = {
 // ---------------- Private variables
 
 // ---------------- Private prototypes
+void childActions(int givenAvatarID, char *totAvatars, char *difficulty, char *IPaddr,
+	unsigned long givenMazePort, char *logFileName, unsigned long givenMazeWidth, unsigned long givenMazeHeight);
+void parentActions(int childrenNeeded, int nextAvatarID, char *totAvatars, char *difficulty,
+	char *IPaddr, unsigned long givenMazePort, char *logFileName, unsigned long givenMazeWidth, unsigned long givenMazeHeight);
 int checkArgs(int argc, char givenDifficulty[], char givenNumAvatars[]);
 int isNumerical(char inputToCheck[]);
+int getNumDigits(unsigned long value);
 void userHelp();
 
 /* ========================================================================== */
@@ -103,7 +111,6 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (help) {
-		userHelp();
 		userHelp();
 		exit(EXIT_SUCCESS);
 	}
@@ -168,25 +175,25 @@ int main(int argc, char *argv[]) {
 	// try to receive AM_INIT_OK message
 	int recvSize = 0;
 	recvSize = recv(sockfd, &serverMessage, sizeof(serverMessage), 0);
-	if ( recvSize < 0){
+	if (recvSize < 0){
 		fprintf(stderr, "Error: Couldn't receive message from server.\n");
 		free(initMsg);
 		exit(EXIT_FAILURE);
 	}
-	if(recvSize == 0){
+	if (recvSize == 0){
 	    fprintf(stderr, "Error: Server connection was closed.\n");
 	    free(initMsg);
 	    exit(EXIT_FAILURE);
 	} 
 	
 	// now the connection can be closed
-	// close(sockfd);
+	close(sockfd);
 	free(initMsg);
 
 	if (IS_AM_ERROR(serverMessage.type)){
 		fprintf(stderr, "Error message received from server\n");
 	}
-	else{
+	else {
 	    printf("AM_INIT_OK message from server successfully received\n");
 	}
 
@@ -214,63 +221,97 @@ int main(int argc, char *argv[]) {
     time (&rawCurrTime);
     timeinfo = localtime(&rawCurrTime);
     fprintf(logFile, "%s, %d, %s", userName, ntohl(serverMessage.init_ok.MazePort), asctime(timeinfo));
+    fclose(logFile);
 
+    char *IPaddr = server->h_addr_list[0];
     // make child processes
-    pid_t childPID;
-    char *childArgs[9];
-    for (int i = 0; i < numAvatars; i++) {
-    	childPID = fork();
-    	if (childPID >= 0) {
-			char avatarID[2];
-    		sprintf(avatarID, "%d", i);
-    		// char IPaddr[15];
-    		// unsigned long convertedIP = ntohl(serverAddr.sin_addr.s_addr);
-    		// sprintf(IPaddr, "%lu", server->h_addr_list[0]);
-    		char *IPaddr = server->h_addr_list[0];
-    		// IPaddr = serverAddr.sin_addr.s_addr;
-    		char mazePort[10];
-    		unsigned long convertedMP = ntohl(serverMessage.init_ok.MazePort);
-    		sprintf(mazePort, "%lu", convertedMP);
-    		char mazeWidth[10];
-    		unsigned long convertedMW = ntohl(serverMessage.init_ok.MazeWidth);
-    		sprintf(mazeWidth, "%lu", convertedMW);
-    		char mazeHeight[10];
-    		unsigned long convertedMH = ntohl(serverMessage.init_ok.MazeHeight);
-    		sprintf(mazeHeight, "%lu", convertedMH);
-    		fprintf(stderr, "Hello I'm a child and my PID is %d\n", getpid());
-    		childArgs[0] = "./avatar";
-    		childArgs[1] = avatarID;
-    		childArgs[2] = givenNumAvatars;
-    		childArgs[3] = givenDifficulty;
-    		childArgs[4] = IPaddr;
-    		childArgs[5] = mazePort;
-    		childArgs[6] = logFileName;
-    		childArgs[7] = mazeWidth;
-    		childArgs[8] = mazeHeight;
-    		childArgs[9] = NULL;
+    int childrenNeeded = numAvatars;
+    pid_t pID;
+    pID = fork();
+    if (pID >= 0) {
+    	childrenNeeded--;
 
-    		if (childPID == 0) {
-	    		// inside child process
-	    		execve("./avatar", childArgs, NULL);
-	    		exit(EXIT_SUCCESS);
-    		}
-    		else {
-    			// inside parent process
-    		}
+    	if (pID == 0) {
+    		childActions(0, givenNumAvatars, givenDifficulty, IPaddr, ntohl(serverMessage.init_ok.MazePort), logFileName,
+    			ntohl(serverMessage.init_ok.MazeWidth), ntohl(serverMessage.init_ok.MazeHeight));
     	}
     	else {
-    		fprintf(stderr, "Error: Failed to fork.\n");
-    		break;
+    		if (childrenNeeded != 0) {
+    			parentActions(childrenNeeded, 1, givenNumAvatars, givenDifficulty, IPaddr, ntohl(serverMessage.init_ok.MazePort),
+    				logFileName, ntohl(serverMessage.init_ok.MazeWidth), ntohl(serverMessage.init_ok.MazeHeight));
+    		}
     	}
     }
+    else {
+    	fprintf(stderr, "Error: Failed to fork.\n");
+    }
 
-
-    fclose(logFile);
     printf("Log file created as: %s\n", logFileName);
     free(logFileName);
 
-   	close(sockfd);
 	return 0;
+}
+
+
+/*
+ * Executes the child program.
+ */
+void childActions(int givenAvatarID, char *totAvatars, char *difficulty, char *IPaddr,
+	unsigned long givenMazePort, char *logFileName, unsigned long givenMazeWidth, unsigned long givenMazeHeight) {
+
+	fprintf(stderr, "Hello I'm a child and my PID is %d and my avatar ID is %d.\n", getpid(), givenAvatarID);
+	int MPlen = getNumDigits(givenMazePort);
+	int MWlen = getNumDigits(givenMazeWidth);
+	int MHlen = getNumDigits(givenMazeHeight);
+
+	char *avatarID = calloc(MAX_ID_LEN + 1, sizeof(char));
+	char *mazePort = calloc(MPlen + 1, sizeof(char));
+	char *mazeWidth = calloc(MWlen + 1, sizeof(char));
+	char *mazeHeight = calloc(MHlen + 1, sizeof(char));
+	sprintf(avatarID, "%d", givenAvatarID);
+	sprintf(mazePort, "%lu", givenMazePort);
+	sprintf(mazeWidth, "%lu", givenMazeWidth);
+	sprintf(mazeHeight, "%lu", givenMazeHeight);
+
+	char *childArgs[NUM_EXEC_ARGS + 1] = {CHILD_EXEC, avatarID, totAvatars, difficulty, IPaddr, mazePort,
+		logFileName, mazeWidth, mazeHeight, NULL};
+	execve(CHILD_EXEC, childArgs, NULL);
+
+	free(avatarID);
+	free(mazePort);
+	free(mazeWidth);
+	free(mazeHeight);
+	free(logFileName);
+	exit(EXIT_SUCCESS);
+}
+
+
+
+/*
+ * Forks parent process to produce one child. (Recursive.)
+ */
+void parentActions(int childrenNeeded, int nextAvatarID, char *totAvatars, char *difficulty, char *IPaddr,
+	unsigned long givenMazePort, char *logFileName, unsigned long givenMazeWidth, unsigned long givenMazeHeight) {
+
+	int childCount = childrenNeeded;
+	pid_t pID;
+    pID = fork();
+    if (pID >= 0) {
+    	childCount--;
+
+    	if (pID == 0) {
+    		childActions(nextAvatarID, totAvatars, difficulty, IPaddr, givenMazePort, logFileName, givenMazeWidth, givenMazeHeight);
+    	}
+    	else {
+    		if (childCount != 0) {
+    			parentActions(childCount, nextAvatarID + 1, totAvatars, difficulty, IPaddr, givenMazePort, logFileName,
+    				givenMazeWidth, givenMazeHeight);
+    		}
+    	}
+    }
+    else {
+    	fprintf(stderr, "Error: Failed to fork at least one of %d children.\n", childrenNeeded);
+    }
 }
 
 
@@ -324,6 +365,17 @@ int isNumerical(char inputToCheck[]) {
     return 1;
 }
 
+/*
+ * Determines number of digits of unsigned long. Returns number of digits if successful, else 0.
+ */
+int getNumDigits(unsigned long value) {
+	const int n = snprintf(NULL, 0, "%lu", value);
+	if (n <= 0) {
+		fprintf(stderr, "Error: Couldn't determine length of %lu.\n", value);
+		return 0;
+	}
+	return n;
+}
 
 /*
  * Prints help information, including version and usage.
