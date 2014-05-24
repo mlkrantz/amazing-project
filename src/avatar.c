@@ -52,20 +52,21 @@ avatarID, int *ignoreList);
 int getPrevDir(int prevX, int prevY, int newX, int newY);
 int determineNextMove(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth]
 [mazeHeight], XYPos **prevXY, XYPos *newXY, int numAvatars, int avatarID, 
-int *ignoreList, int *prevMove);
+int *ignoreList, int *prevMove, FILE *log);
 void cleanup(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth]
 [mazeHeight], int numAvatars, XYPos **prevXY);
+void logMovement(int direction, XYPos *newXY, FILE *log, int avatarID);
 
 /* ========================================================================== */
 
 int main(int argc, char *argv[]) {
 
-	printf("%s %s %s %s %s %s %s %s\n", argv[1],argv[2],argv[3],argv[4],argv[5],argv[6],argv[7],argv[8]);
+	printf("%s %s %s %s %s %s %s %s\n", argv[1], argv[2], argv[3], argv[4],
+	argv[5], argv[6], argv[7], argv[8]);
 
 	// Local variables
 	int avatarID = atoi(argv[1]);
 	int numAvatars = atoi(argv[2]);
-	int difficulty = atoi(argv[3]);
 	char *ipAddress = argv[4];
 	int mazePort = atoi(argv[5]);
 	char *logfile = argv[6];
@@ -115,7 +116,9 @@ int main(int argc, char *argv[]) {
 	// Connect to server
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0) {
-                fprintf(stderr, "Error: Couldn't create socket\n");
+		if (avatarID == 0) {
+                	fprintf(stderr, "Error: Couldn't create socket\n");
+		}
 		cleanup(mazeWidth, mazeHeight, grid, numAvatars, prevXY);
                 exit(EXIT_FAILURE);
         }
@@ -127,7 +130,9 @@ int main(int argc, char *argv[]) {
 
 	// Connect to the server
 	if (connect(sockfd, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) < 0) {
-		fprintf(stderr, "Error: Failed to connect to server\n");
+		if (avatarID == 0) {
+			fprintf(stderr, "Error: Failed to connect to server\n");
+		}
 		cleanup(mazeWidth, mazeHeight, grid, numAvatars, prevXY);
 		exit(EXIT_FAILURE);
 	}
@@ -139,7 +144,9 @@ int main(int argc, char *argv[]) {
 	readyMsg.avatar_ready.AvatarId = htonl(avatarID);
 
 	if (send(sockfd, &readyMsg, sizeof(readyMsg), 0) == -1) {
-		fprintf(stderr, "Error: Failed to send message\n");
+		if (avatarID == 0) {
+			fprintf(stderr, "Error: Failed to send message\n");
+		}
 		cleanup(mazeWidth, mazeHeight, grid, numAvatars, prevXY);
 		close(sockfd);
 		exit(EXIT_FAILURE);
@@ -148,11 +155,19 @@ int main(int argc, char *argv[]) {
 	// Open log file in append mode
 	FILE *log = fopen(logfile, "a");
 	if (log == NULL) {
-		fprintf(stderr, "Error: could not open log file\n");
+		if (avatarID == 0) {
+			fprintf(stderr, "Error: could not open log file\n");
+		}
 		cleanup(mazeWidth, mazeHeight, grid, numAvatars, prevXY);
 		close(sockfd);
 		exit(EXIT_FAILURE);
 	}
+
+	// Keep track of the turn number
+	if (avatarID == 0) {
+		fprintf(log, "\n");
+	}
+	int turn = -1;
 
 	// Maze is now running
 	while (1) {
@@ -165,14 +180,18 @@ int main(int argc, char *argv[]) {
 		int recvSize = 0;
         	recvSize = recv(sockfd, &serverMessage, sizeof(serverMessage), 0);
         	if (recvSize < 0) {
-                	fprintf(stderr, "Error: Couldn't receive message from server\n");
+                	if (avatarID == 0) {
+				fprintf(stderr, "Error: Couldn't receive message from server\n");
+			}
 			cleanup(mazeWidth, mazeHeight, grid, numAvatars, prevXY);
 			close(sockfd);
 			fclose(log);
                 	exit(EXIT_FAILURE);
         	}
         	if (recvSize == 0) {
-            		fprintf(stderr, "Error: Server connection was closed\n");
+			if (avatarID == 0) {
+            			fprintf(stderr, "Error: Server connection was closed\n");
+			}
 			cleanup(mazeWidth, mazeHeight, grid, numAvatars, prevXY);
 			close(sockfd);
 			fclose(log);
@@ -181,7 +200,9 @@ int main(int argc, char *argv[]) {
 
 		// Check for error message
 		if (IS_AM_ERROR(ntohl(serverMessage.type))) {
-                	fprintf(stderr, "Error message received from server\n");
+			if (avatarID == 0) {
+                		fprintf(stderr, "Error message received from server\n");
+			}
 			cleanup(mazeWidth, mazeHeight, grid, numAvatars, prevXY);
 			fclose(log);
 			close(sockfd);
@@ -190,10 +211,16 @@ int main(int argc, char *argv[]) {
 
 		// Turn message
 		if (ntohl(serverMessage.type) == AM_AVATAR_TURN) {
+
+			// Increment turn number
+			turn++;
 			
 			// If current avatar's turn
 			if (ntohl(serverMessage.avatar_turn.TurnId) == avatarID) {
-				
+			
+				// Print turn number
+				fprintf(log, "***** Turn %d *****\n", turn);
+	
 				// Update grid
 				XYPos *newXY = serverMessage.avatar_turn.Pos;
 				updateGrid(mazeWidth, mazeHeight, grid, prevXY, newXY, numAvatars,
@@ -201,10 +228,12 @@ int main(int argc, char *argv[]) {
 
 				// Determine next move
 				int direction = determineNextMove(mazeWidth, mazeHeight, grid,
-				prevXY, newXY, numAvatars, avatarID, ignoreList, &prevMove);
-				printf("Avatar %d went in direction %d\n", avatarID, direction);
-
-				// LOG PROGRESS
+				prevXY, newXY, numAvatars, avatarID, ignoreList, &prevMove, 
+				log);
+				
+				// Log progress
+				logMovement(direction, newXY, log, avatarID);
+				fflush(log);
 
 				// Send move message
 				AM_Message moveMsg;
@@ -230,8 +259,12 @@ int main(int argc, char *argv[]) {
 
 		// Success message
 		if (ntohl(serverMessage.type) == AM_MAZE_SOLVED) {
-			// LOG SUCCESS
-			printf("Success!\n");
+			if (avatarID == 0) {
+				fprintf(log, "Success! Solved maze of difficulty %d, with %d avatars, in %d "
+				"moves.\nThe hash returned by AM_MAZE_SOLVED is %u.\nLog file complete!", ntohl
+				(serverMessage.maze_solved.Difficulty), ntohl(serverMessage.maze_solved.nAvatars), 
+				ntohl(serverMessage.maze_solved.nMoves), ntohl(serverMessage.maze_solved.Hash));
+			}
 			break;
 		}
 
@@ -324,7 +357,8 @@ int getPrevDir(int prevX, int prevY, int newX, int newY) {
  *
  */
 int determineNextMove(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth][mazeHeight], XYPos 
-**prevXY, XYPos *newXY, int numAvatars, int avatarID, int *ignoreList, int *prevMove) {
+**prevXY, XYPos *newXY, int numAvatars, int avatarID, int *ignoreList, int *prevMove, FILE 
+*log) {
 
 	// Get current position
 	int currX = ntohl(newXY[avatarID].x);
@@ -347,7 +381,8 @@ int determineNextMove(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth][mazeH
 		for (int i = 0; i < numAvatars; i++) {
 			// Follow if not on ignore list
 			if (currCell->traceOrig == i && !ignoreList[i]) {
-				printf("Followed trace...\n");
+				fprintf(log, "Avatar %d followed a trace left by avatar %d\n",
+				avatarID, currCell->traceOrig);
 				*prevMove = currCell->traceDir;
 				return currCell->traceDir;
 			}
@@ -423,4 +458,44 @@ XYPos **prevXY) {
 		free(prevPos);
 	}	
 
+}
+
+/*
+ * Catalog avatar's movement in log file using turn and direction
+ * information
+ *
+ */
+void logMovement(int direction, XYPos *newXY, FILE *log, int avatarID) {
+
+	// ID and position
+	fprintf(log, "Avatar %d, at position (%d, %d), ", avatarID, ntohl
+	(newXY[avatarID].x), ntohl(newXY[avatarID].y));
+
+	// Direction of movement
+	if (direction != M_NULL_MOVE) {
+		char *directionName = NULL;
+		switch (direction) {
+		    case M_NORTH:
+			directionName = "North";
+			break;
+		    case M_SOUTH:
+			directionName = "South";
+			break;
+		    case M_EAST:
+			directionName = "East";
+			break;
+		    case M_WEST:
+			directionName = "West";
+			break;
+		    default:
+			fprintf(log, "made an invalid move!\n\n");
+			return;
+		}
+		fprintf(log, "attempted to move %s\n\n", directionName);
+	}
+	// No movement
+	else {
+		fprintf(log, "stood still\n\n");
+	}
+	
 }
