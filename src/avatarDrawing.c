@@ -46,7 +46,8 @@
 
 // ---------------- Private variables
 //create pixmap to do actual drawing on
-static GdkPixmap *PixMap=NULL
+static GdkPixmap *PixMap=NULL; //map to do drawning
+static GdkFont *fixed_font; //font for drawing text
 
 // ---------------- Private prototypes
 void updateGrid(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth]
@@ -73,13 +74,13 @@ static gint configure_event (GtkWidget *widget, GdkEventConfigure *event)
     gdk_pixmap_unref(PixMap);
 
   //create pixmap
-  pixmap = gdk_pixmap_new(widget->window,
+  PixMap = gdk_pixmap_new(widget->window,
                           widget->allocation.width,
                           widget->allocation.height,
                           -1);
 
   //clear the pixmap initially to white
-  gdk_draw_rectangle (pixmap,
+  gdk_draw_rectangle (PixMap,
                       widget->style->white_gc,
                       TRUE,
                       0, 0,
@@ -95,7 +96,7 @@ static gint expose_event (GtkWidget *widget, GdkEventExpose *event)
 {
   gdk_draw_pixmap(widget->window,
                   widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
-                  pixmap,
+                  PixMap,
                   event->area.x, event->area.y,
                   event->area.x, event->area.y,
                   event->area.width, event->area.height);
@@ -168,8 +169,15 @@ int main(int argc, char *argv[]) {
       //resize canvas
       gtk_drawing_area_size(canvas, mazeWidth*CELL_SIZE, mazeHeight*CELL_SIZE);
 
+      //show everything on screen
+      gtk_widget_show_all(window);
+
+      //load font for draw_text
+      fixed_font=gtk_font_load("-adobe-new century schoolbook-bold-i-normal-*-8-*-*-*-p-80-iso8859-1");
 
 
+      //run the main drawing process until quit
+      gtk_main();
 
     }
 
@@ -339,7 +347,7 @@ int main(int argc, char *argv[]) {
  *
  */
 void updateGrid(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth][mazeHeight], XYPos **prevXY, 
-		XYPos *newXY, int numAvatars, int avatarID, int *ignoreList) {
+		XYPos *newXY, int numAvatars, int avatarID, int *ignoreList, GtkWidget *widget) {
 
   // Loop through all avatars
   for (int i = 0; i < numAvatars; i++) {
@@ -358,9 +366,68 @@ void updateGrid(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth][mazeHeight]
 	// Leave a trace
 	grid[prevX][prevY]->traceOrig = i;
 	grid[prevX][prevY]->traceDir = getPrevDir(prevX, 
-						  prevY, newX, newY);
+					  prevY, newX, newY);
+	if(avatarID==0)
+	  {
+	    //draw out the initial positions
+	    char* ID=calloc(2,sizeof(char));
+	    sprintf(ID,"%d",i);
+	    //might segfault
+	    //erase previous content in the cell
+	    gdk_draw_rectangle(PixMap,widget->style->white_gc,TRUE,newX*CELL_SIZE+1, newY*CELL_SIZE+1,CELL_SIZE-2, CELL_SIZE-2);
+	
+	    //draw out the new position of avatar
+	    gdk_draw_text(PixMap,fixed_font,widget->style->white_gc,newX*CELL_SIZE+1, newY*CELL_SIZE+1,ID,1);
+	    free(ID);
+
+	    //erase previous content in the cell of previous position
+	    gdk_draw_rectangle(PixMap,widget->style->white_gc,TRUE,prevX*CELL_SIZE+1, prevY*CELL_SIZE+1,CELL_SIZE-2, CELL_SIZE-2);
+	
+	    //draw out the trace
+	    //if trace pointing up
+	    if(grid[prevX][prevY]->traceDir==1)
+	      {
+		gdk_draw_text(PixMap,fixed_font,widget->style->white_gc,prevX*CELL_SIZE+1, prevY*CELL_SIZE+1,"\u2191",1);
+	      }
+
+	    //if trace pointing left
+	    else if(grid[prevX][prevY]->traceDir==0)
+	      {
+		gdk_draw_text(PixMap,fixed_font,widget->style->white_gc,prevX*CELL_SIZE+1, prevY*CELL_SIZE+1,"\u2190",1);
+	      }
+
+	    //if trace pointing right
+	    else if(grid[prevX][prevY]->traceDir==3)
+	      {
+		gdk_draw_text(PixMap,fixed_font,widget->style->white_gc,prevX*CELL_SIZE+1, prevY*CELL_SIZE+1,"\u2192",1);
+	      }
+
+	    //if trace pointing down
+	    else if(grid[prevX][prevY]->traceDir==2)
+	      {
+		gdk_draw_text(PixMap,fixed_font,widget->style->white_gc,prevX*CELL_SIZE+1, prevY*CELL_SIZE+1,"\u2193",1);
+	      }
+
+	    //send exposure signal to main function
+	    gtk_widget_queue_draw_area(widget, newX*CELL_SIZE, newY*CELL_SIZE,CELL_SIZE-2, CELL_SIZE-2);
+	    gtk_widget_queue_draw_area(widget, prevX*CELL_SIZE, prevY*CELL_SIZE,CELL_SIZE-2, CELL_SIZE-2);
+	  }
       }
+      if(avatarID==0)
+	{
+	  //draw out the initial positions
+	  char* ID=calloc(2,sizeof(char));
+	  sprintf(ID,"%d",i);
+	  //might segfault
+	  //draw out initial position of avatars
+	  gdk_draw_text(PixMap,fixed_font,widget->style->white_gc,newX*CELL_SIZE+1, newY*CELL_SIZE+1,ID,1);
+	  free(ID);
+	  //send exposure signal to main function
+	  gtk_widget_queue_draw_area(widget, newX*CELL_SIZE, newY*CELL_SIZE, CELL_SIZE-2, CELL_SIZE-2);
+	}
     }
+    //if the avatar didnt move, then draw a wall
+    //    gdk_draw_line(PixMap,widget->style->white_gc,(newX+1)*CELL_SIZE+
   }
   // Update ignore list
   int currX = ntohl(newXY[avatarID].x);
