@@ -441,6 +441,11 @@ int determineNextMove(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth][mazeH
 
 }
 
+/*
+ * Free all memory allocated for the avatar and its
+ * data structures
+ *
+ */
 void cleanup(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth][mazeHeight], int numAvatars, 
 XYPos **prevXY) {
 
