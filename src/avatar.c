@@ -261,7 +261,7 @@ int main(int argc, char *argv[]) {
 		if (ntohl(serverMessage.type) == AM_MAZE_SOLVED) {
 			if (avatarID == 0) {
 				fprintf(log, "Success! Solved maze of difficulty %d, with %d avatars, in %d "
-				"moves.\nThe hash returned by AM_MAZE_SOLVED is %d.\nLog file complete!", ntohl
+				"moves.\nThe hash returned by AM_MAZE_SOLVED is %u.\nLog file complete!", ntohl
 				(serverMessage.maze_solved.Difficulty), ntohl(serverMessage.maze_solved.nAvatars), 
 				ntohl(serverMessage.maze_solved.nMoves), ntohl(serverMessage.maze_solved.Hash));
 			}
