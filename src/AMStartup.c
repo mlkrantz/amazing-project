@@ -38,6 +38,8 @@
 #include <netdb.h> 
 #include <time.h>
 #include <ctype.h>
+#include <sys/wait.h>
+#include <errno.h>
 
 // ---------------- Local includes  e.g., "file.h"
 #include "amazing.h"
@@ -75,7 +77,7 @@ int main(int argc, char *argv[]) {
 	int help = 0;
 	int numAvatars;		// 1-AM_MAX_AVATAR
 	int difficulty;		// 0-AM_MAX_DIFFICULTY
-	char *hostname;
+	char *hostname = NULL;
 	char *givenNumAvatars = NULL;
 	char *givenDifficulty = NULL;
 	
@@ -246,9 +248,15 @@ int main(int argc, char *argv[]) {
     	fprintf(stderr, "Error: Failed to fork.\n");
     }
 
+    while ((pID = waitpid(-1, NULL, 0))) {
+	   if (errno == ECHILD) {
+	      break;
+	   }
+	}
+
     printf("Log file created as: %s\n", logFileName);
     free(logFileName);
-
+    exit(EXIT_SUCCESS);
 	return 0;
 }
 
@@ -275,14 +283,14 @@ void childActions(int givenAvatarID, char *totAvatars, char *difficulty, char *I
 
 	char *childArgs[NUM_EXEC_ARGS + 1] = {CHILD_EXEC, avatarID, totAvatars, difficulty, IPaddr, mazePort,
 		logFileName, mazeWidth, mazeHeight, NULL};
-	execve(CHILD_EXEC, childArgs, NULL);
-
-	free(avatarID);
-	free(mazePort);
-	free(mazeWidth);
-	free(mazeHeight);
-	free(logFileName);
-	exit(EXIT_SUCCESS);
+	if (execve(CHILD_EXEC, childArgs, NULL) == -1) {
+		free(avatarID);
+		free(mazePort);
+		free(mazeWidth);
+		free(mazeHeight);
+		free(logFileName);
+		exit(EXIT_FAILURE);
+	}
 }
 
 
