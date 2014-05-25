@@ -50,8 +50,8 @@ static GdkPixmap *PixMap=NULL; //map to do drawning
 static GdkFont *fixed_font; //font for drawing text
 
 // ---------------- Private prototypes
-void updateGrid(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth]
-[mazeHeight], XYPos **prevXY, XYPos *newXY, int numAvatars, int
+void updateGrid(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth][mazeHeight],
+ XYPos **prevXY, XYPos *newXY, int numAvatars, int
 avatarID, int *ignoreList);
 int getPrevDir(int prevX, int prevY, int newX, int newY);
 int determineNextMove(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth]
@@ -167,13 +167,13 @@ int main(int argc, char *argv[]) {
       g_signal_connect(canvas,"expose-event",G_CALLBACK(expose_event),NULL);
 
       //resize canvas
-      gtk_drawing_area_size(canvas, mazeWidth*CELL_SIZE, mazeHeight*CELL_SIZE);
+      //      gtk_drawing_area_size(canvas, mazeWidth*CELL_SIZE, mazeHeight*CELL_SIZE);
 
       //show everything on screen
       gtk_widget_show_all(window);
 
       //load font for draw_text
-      fixed_font=gtk_font_load("-adobe-new century schoolbook-bold-i-normal-*-8-*-*-*-p-80-iso8859-1");
+      fixed_font=gdk_font_load("-adobe-new century schoolbook-bold-i-normal-*-8-*-*-*-p-80-iso8859-1");
 
 
       //run the main drawing process until quit
