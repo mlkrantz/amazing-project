@@ -223,6 +223,8 @@ int main(int argc, char *argv[]) {
 				XYPos *newXY = serverMessage.avatar_turn.Pos;
 				updateGrid(mazeWidth, mazeHeight, grid, prevXY, newXY, numAvatars,
 				avatarID, ignoreList);
+
+				//create an array for colors used for drawing
 				char* colorArray[10];
 				colorArray[0]="\033[22;31m";
 				colorArray[1]="\033[22;32m";
@@ -234,15 +236,20 @@ int main(int argc, char *argv[]) {
 				colorArray[7]="\033[01;30m";
 				colorArray[8]="\033[01;31m";
 				colorArray[9]="\033[01;32m";
-				for(int h=0;h<=mazeHeight+1;h++)
+
+				//start ASCII drawing
+				for(int h=0;h<=mazeHeight+1;h++)//cycle through the rows
 				  {
-				    for(int w=0;w<=mazeWidth+1;w++)
+				    for(int w=0;w<=mazeWidth+1;w++)//cycle through the columns
 				      {
+					//check to see if the position is at the boundary of the maze
 					if(w==0||h==0||w==mazeWidth+1||h==mazeHeight+1)
 					  {
 					    char* black="\033[22;30m";
 					    printf("%s* ",black);
 					  }
+					//check to see if the cell contains an avatar
+					//if so, draws out the avatar in its unique color
 					else if(grid[w-1][h-1]->avatarNum>0)
 					  {
 					    for (int i = 0; i < numAvatars; i++)
@@ -255,6 +262,8 @@ int main(int argc, char *argv[]) {
 					      }
 					  }
 					
+					//check for trace direction in cell, and draw them in the color 
+					//corresponding to the avatar that left the trace
 					else if(grid[w-1][h-1]->traceDir==1)
 					  {
 					    printf("%s\u2191 ",colorArray[grid[w-1][h-1]->traceOrig]);
@@ -271,14 +280,18 @@ int main(int argc, char *argv[]) {
 					  {
 					    printf("%s\u2193 ",colorArray[grid[w-1][h-1]->traceOrig]);
 					  }
+
+					//if empty cell, draw nothing
 					else
 					  {
 					    printf("  ");
 					  }
 				      }
+				    //start new line on new row
 				    printf("\n");
 				  }
-				sleep(.6);	     
+				sleep(.4);
+	     
 				// Determine next move
 				int direction = determineNextMove(mazeWidth, mazeHeight, grid,
 				prevXY, newXY, numAvatars, avatarID, ignoreList, &prevMove, 
