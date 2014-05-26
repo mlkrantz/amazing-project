@@ -21,7 +21,7 @@
 
 
 # the test log
-log_file=AMStartupTestlog.`date +"%a_%b_%d_%T_%Y"`			
+log_file=AMStartupTestlog.`date +"%a_%b_%d_%T_%Y"`		
 
 # server hostname to test on
 server="pierce.cs.dartmouth.edu"
@@ -72,19 +72,23 @@ TEST_CMD[9]="./AMStartup -n 1 -d 5.6 -h $server"
 
 TEST[10]="Testing with non-numeric difficulty level (ex. g)"
 TEST_EXPD[10]="Error: Difficulty must be an integer from 0 to 9"
-TEST_CMD[10]="./AMStartup -n 1 -d g -h $server"	
+TEST_CMD[10]="./AMStartup -n 1 -d g -h $server"
 
-# TEST[100]="Testing correct command line options, with 5 avatars at difficulty 0"
-# TEST_EXPD[100]=""
-# TEST_CMD[100]="./AMStartup -n 5 -d 0 -h $server"
+TEST[11]="=========BEGIN: UNIT TESTING FUNCTIONS OF AVATAR========="
+TEST_EXPD[11]="Exit status of testing program is 0 (0 = success)"
+TEST_CMD[11]="./testing"	
 
-# TEST[101]="Testing correct command line options, with 2 avatars at difficulty 6"
-# TEST_EXPD[101]=""
-# TEST_CMD[101]="./AMStartup -n 2 -d 6 -h $server"
+TEST[12]="Testing correct command line options, with 2 avatars at difficulty 0"
+TEST_EXPD[12]=`printf "Success! Solved maze of difficulty 0, with 2 avatars, in 79 moves.\nThe hash returned by AM_MAZE_SOLVED is ___.\nLog file complete!"`
+TEST_CMD[12]="./AMStartup -n 2 -d 0 -h $server"
+
+TEST[13]="Testing correct command line options, with 4 avatars at difficulty 2"
+TEST_EXPD[13]=`printf "Success! Solved maze of difficulty 2, with 4 avatars, in 256 moves.\nThe hash returned by AM_MAZE_SOLVED is ___.\nLog file complete!"`
+TEST_CMD[13]="./AMStartup -n 4 -d 2 -h $server"
 
 
 # start the log
-num_tests=11	# CHANGE THIS LATER
+num_tests=14	
 touch $log_file
 
 # start the log
@@ -117,13 +121,30 @@ printf "=========================================\n\n" >> $log_file
 # now start the tests
 for ((i = 0; i < $num_tests; i++)); do
 	printf "${TEST[i]}\n" >> $log_file
-	printf "\n${TEST_CMD[i]}\n" >> $log_file
+	if ((i != 11)); then
+		printf "\n${TEST_CMD[i]}\n" >> $log_file
+	fi
 	# print the expected result
 	printf "\nEXPECTED RESULT: \n${TEST_EXPD[i]}\n" >> $log_file
 	printf "\nSYSTEM OUTPUT: \n" >> $log_file
 	# run the command to get the system output
 	${TEST_CMD[i]}  >> $log_file  2>&1
-
+	if ((i == 11)); then
+		printf "\n\nExit status of testing program is $? (0 = success)\n" >> $log_file
+		printf "\n=========END: UNIT TESTING FUNCTIONS OF AVATAR=========" >> $log_file
+	fi
+	if ((i == 12)); then
+		echo "" >> $log_file
+		tail -3 Amazing_$USER\_2_0.log >> $log_file
+		# remove avatar-produced logfile
+		rm -f Amazing_$USER\_2_0.log
+	fi
+	if ((i == 13)); then
+		echo "" >> $log_file
+		tail -3 Amazing_$USER\_4_2.log >> $log_file
+		# remove avatar-produced logfile
+		rm -f Amazing_$USER\_4_2.log
+	fi
 
 	printf "\n---------------------------------------\n" >> $log_file
 
