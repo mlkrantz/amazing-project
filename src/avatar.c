@@ -224,7 +224,7 @@ int main(int argc, char *argv[]) {
 				updateGrid(mazeWidth, mazeHeight, grid, prevXY, newXY, numAvatars,
 				avatarID, ignoreList);
 
-				//create an array for colors used for drawing
+				// Create an array for colors used for drawing
 				char* colorArray[10];
 				colorArray[0]="\033[22;31m";
 				colorArray[1]="\033[22;32m";
@@ -237,59 +237,47 @@ int main(int argc, char *argv[]) {
 				colorArray[8]="\033[01;31m";
 				colorArray[9]="\033[01;32m";
 
-				//start ASCII drawing
-				for(int h=0;h<=mazeHeight+1;h++)//cycle through the rows
-				  {
-				    for(int w=0;w<=mazeWidth+1;w++)//cycle through the columns
-				      {
-					//check to see if the position is at the boundary of the maze
-					if(w==0||h==0||w==mazeWidth+1||h==mazeHeight+1)
-					  {
-					    char* black="\033[22;30m";
-					    printf("%s* ",black);
-					  }
-					//check to see if the cell contains an avatar
-					//if so, draws out the avatar in its unique color
-					else if(grid[w-1][h-1]->avatarNum>0)
-					  {
-					    for (int i = 0; i < numAvatars; i++)
-					      {
-						if((w-1)==ntohl(newXY[i].x) && (h-1)==ntohl(newXY[i].y))
-						  {
-						    printf("%s%d ",colorArray[i],i);
-						    break;
-						  } 					     
-					      }
-					  }
+				// Start ASCII drawing
+				for(int h = 0; h <= mazeHeight + 1; h++) {
+					for(int w = 0; w <= mazeWidth + 1; w++) {
+						// Check to see if the position is at the boundary
+						if (w == 0 || h == 0 || w == mazeWidth + 1 || h == mazeHeight + 1) {
+							char* black="\033[22;30m";
+					    		printf("%s* ", black);
+					  	}
+						// Draw avatar if in cell
+						else if (grid[w-1][h-1]->avatarNum > 0) {
+					    		for (int i = 0; i < numAvatars; i++) {
+								if ((w-1) == ntohl(newXY[i].x) && (h-1) == ntohl(newXY[i].y)) {
+						    			printf("%s%d ", colorArray[i],i);
+						    			break;
+						  		} 					     
+					      		}
+					  	}
 					
-					//check for trace direction in cell, and draw them in the color 
-					//corresponding to the avatar that left the trace
-					else if(grid[w-1][h-1]->traceDir==1)
-					  {
-					    printf("%s\u2191 ",colorArray[grid[w-1][h-1]->traceOrig]);
-					  }
-					else if(grid[w-1][h-1]->traceDir==0)
-					  {
-					    printf("%s\u2190 ",colorArray[grid[w-1][h-1]->traceOrig]);
-					  }
-					else if(grid[w-1][h-1]->traceDir==3)
-					  {
-					    printf("%s\u2192 ",colorArray[grid[w-1][h-1]->traceOrig]);
-					  }
-					else if(grid[w-1][h-1]->traceDir==2)
-					  {
-					    printf("%s\u2193 ",colorArray[grid[w-1][h-1]->traceOrig]);
-					  }
+						// Draw corresponding trace
+						else if (grid[w-1][h-1]->traceDir == 1) {
+					    		printf("%s\u2191 ", colorArray[grid[w-1][h-1]->traceOrig]);
+					  	}
+						else if (grid[w-1][h-1]->traceDir == 0) {
+					    		printf("%s\u2190 ", colorArray[grid[w-1][h-1]->traceOrig]);
+					  	}
+						else if (grid[w-1][h-1]->traceDir == 3) {
+					    		printf("%s\u2192 ", colorArray[grid[w-1][h-1]->traceOrig]);
+					  	}
+						else if (grid[w-1][h-1]->traceDir == 2) {
+					    		printf("%s\u2193 ", colorArray[grid[w-1][h-1]->traceOrig]);
+					  	}
 
-					//if empty cell, draw nothing
-					else
-					  {
-					    printf("  ");
-					  }
-				      }
-				    //start new line on new row
-				    printf("\n");
-				  }
+						// If empty cell, draw nothing
+						else {
+					    		printf("  ");
+					  	}
+				      	}
+				    	// Start new line on new row
+				   	printf("\n");
+				}
+				// Sleep
 				sleep(.4);
 	     
 				// Determine next move

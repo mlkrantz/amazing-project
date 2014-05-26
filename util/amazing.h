@@ -20,8 +20,9 @@
 #include <stdint.h>                          // uint32_t
 
 // ---------------- Constants
-// side length of cells, 10 for actual cell, 1 for border
-#define CELL_SIZE 11
+/* Cell parameters */
+#define CELL_SIZE 11                         // Side length of cells
+
 /* Server parameters */
 #define AM_SERVER_PORT  "17235"              // Server management port, ASCII "CS"
 #define AM_MAX_MESSAGE     128               // max message length in bytes
