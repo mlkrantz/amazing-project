@@ -70,6 +70,7 @@ XYPos *newXY, int numAvatars, int avatarID, int *ignoreList) {
                         }
                 }
         }
+
         // Update ignore list
         int currX = ntohl(newXY[avatarID].x);
         int currY = ntohl(newXY[avatarID].y);
