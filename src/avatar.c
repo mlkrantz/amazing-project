@@ -238,8 +238,9 @@ int main(int argc, char *argv[]) {
 				colorArray[9]="\033[01;32m";
 
 				// Start ASCII drawing
-				for(int h = 0; h <= mazeHeight + 1; h++) {
-					for(int w = 0; w <= mazeWidth + 1; w++) {
+				if (avatarID == 0) {
+				for (int h = 0; h <= mazeHeight + 1; h++) {
+					for (int w = 0; w <= mazeWidth + 1; w++) {
 						// Check to see if the position is at the boundary
 						if (w == 0 || h == 0 || w == mazeWidth + 1 || h == mazeHeight + 1) {
 							char* black="\033[22;30m";
@@ -248,7 +249,7 @@ int main(int argc, char *argv[]) {
 						// Draw avatar if in cell
 						else if (grid[w-1][h-1]->avatarNum > 0) {
 					    		for (int i = 0; i < numAvatars; i++) {
-								if ((w-1) == ntohl(newXY[i].x) && (h-1) == ntohl(newXY[i].y)) {
+								if ((w-1) == ntohl(newXY[i].x) && (h - 1) == ntohl(newXY[i].y)) {
 						    			printf("%s%d ", colorArray[i],i);
 						    			break;
 						  		} 					     
@@ -278,7 +279,9 @@ int main(int argc, char *argv[]) {
 				   	printf("\n");
 				}
 				// Sleep
+				fflush(stdout);
 				sleep(.4);
+				}
 	     
 				// Determine next move
 				int direction = determineNextMove(mazeWidth, mazeHeight, grid,
