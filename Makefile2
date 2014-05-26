@@ -15,7 +15,7 @@ AMStartup: $(UTILLIB) avatar.o testing.o
 	@$(CC) $(CFLAGS) -o AMStartup src/AMStartupDrawing.c -I $(DIR) -L $(DIR) $(UTILFLAG) $(GTK)
 	@echo "Building AMStartup"
 
-avatar.o: src/avatar.c
+avatar.o: src/avatarDrawing.c
 	@$(CC) $(CFLAGS) -o avatar src/avatarDrawing.c -I $(DIR) -L $(DIR) $(UTILFLAG) $(GTK)
 	@echo "Building avatar"
 

@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
   char *logfile = argv[6];
   int mazeWidth = atoi(argv[7]);
   int mazeHeight = atoi(argv[8]);
-  char* pro="6291487";
+  char* pro="12582943";
   GdkNativeWindow origWindow = strtoul(pro, NULL, 10);
   	
   // Store last valid move
