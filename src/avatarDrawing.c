@@ -46,13 +46,16 @@
 
 // ---------------- Private variables
 //create pixmap to do actual drawing on
-static GdkPixmap *PixMap=NULL; //map to do drawning
+static GdkPixmap *PixMap; //map to do drawning
 static GdkFont *fixed_font; //font for drawing text
 
+//initialize gtk window and gtkdrawingarea widget for visualization
+
+static GtkWidget *canvas;
 // ---------------- Private prototypes
 void updateGrid(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth][mazeHeight],
- XYPos **prevXY, XYPos *newXY, int numAvatars, int
-avatarID, int *ignoreList);
+		XYPos **prevXY, XYPos *newXY, int numAvatars, int avatarID,
+		int *ignoreList);
 int getPrevDir(int prevX, int prevY, int newX, int newY);
 int determineNextMove(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth]
 [mazeHeight], XYPos **prevXY, XYPos *newXY, int numAvatars, int avatarID, 
@@ -63,47 +66,6 @@ static gint configure_event(GtkWidget *widget, GdkEventConfigure *event);
 static gint expose_event (GtkWidget *widget, GdkEventExpose *event);
 
 /* ========================================================================== */
-
-//create a new pixmap to do actual drawing, and to be exposed to drawingarea
-//for visualization.
-static gint configure_event (GtkWidget *widget, GdkEventConfigure *event)
-{
-  //check to see if it already exist
-  //if so, then dereference and remake pixmap
-  if (PixMap)
-    gdk_pixmap_unref(PixMap);
-
-  //create pixmap
-  PixMap = gdk_pixmap_new(widget->window,
-                          widget->allocation.width,
-                          widget->allocation.height,
-                          -1);
-
-  //clear the pixmap initially to white
-  gdk_draw_rectangle (PixMap,
-                      widget->style->white_gc,
-                      TRUE,
-                      0, 0,
-                      widget->allocation.width,
-                      widget->allocation.height);
-
-  return TRUE;
-}
-
-
-/* Redraw the screen from the backing pixmap */
-static gint expose_event (GtkWidget *widget, GdkEventExpose *event)
-{
-  gdk_draw_pixmap(widget->window,
-                  widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
-                  PixMap,
-                  event->area.x, event->area.y,
-                  event->area.x, event->area.y,
-                  event->area.width, event->area.height);
-
-  return FALSE;
-}
-
 
 int main(int argc, char *argv[]) {
 
@@ -118,7 +80,9 @@ int main(int argc, char *argv[]) {
   char *logfile = argv[6];
   int mazeWidth = atoi(argv[7]);
   int mazeHeight = atoi(argv[8]);
-	
+  char* pro="6291487";
+  GdkNativeWindow origWindow = strtoul(pro, NULL, 10);
+  	
   // Store last valid move
   int prevMove = -1;
 
@@ -136,49 +100,31 @@ int main(int argc, char *argv[]) {
   
   if(avatarID==0) //set avatar 0 as drawing avatar
     {
-      //initialize gtk window and gtkdrawingarea widget for visualization
-
-      GtkWidget *window;
-      GtkWidget *canvas;
-
-      //initialize gtk libraries for further operation.
-      gtk_init(&argc, &argv);
-
-      //initialize window
-      window=gtk_window_new(GTK_WINDOW_TOPLEVEL);
-
-      //name and resize window
-      gtk_window_set_title(GTK_WINDOW(window),"MAZE");
-      gtk_window_set_default_size(GTK_WINDOW(window), mazeWidth*CELL_SIZE, mazeHeight*CELL_SIZE);
-
-      //initialize drawing area widget to draw on
+      fprintf(stderr,"line 1\n");
+      gtk_init(&argc,&argv);
+      fprintf(stderr,"yo, there's still hope!");
+      //initialize drawingArea widget and add it to the original socket
       canvas=gtk_drawing_area_new();
+      GtkWidget* plug=gtk_plug_new(origWindow);
 
       //add canvas to window
-      gtk_container_add(GTK_CONTAINER(window),canvas);
+      gtk_container_add(GTK_CONTAINER(plug),canvas);
 
       //connect the window to necessary signals
-
       //connect configure_event signal to canvas
       g_signal_connect(canvas, "configure-event",G_CALLBACK(configure_event),NULL);
       //connect destroy signal to canvas
-      g_signal_connect_swapped(G_OBJECT(window), "destroy", G_CALLBACK(gtk_main_quit),G_OBJECT(window));
+      g_signal_connect_swapped(plug, "destroy", G_CALLBACK(gtk_main_quit),G_OBJECT(plug));
       //connect expose event signal to canvas
       g_signal_connect(canvas,"expose-event",G_CALLBACK(expose_event),NULL);
-
       //resize canvas
       //      gtk_drawing_area_size(canvas, mazeWidth*CELL_SIZE, mazeHeight*CELL_SIZE);
-
-      //show everything on screen
-      gtk_widget_show_all(window);
 
       //load font for draw_text
       fixed_font=gdk_font_load("-adobe-new century schoolbook-bold-i-normal-*-8-*-*-*-p-80-iso8859-1");
 
-
-      //run the main drawing process until quit
-      gtk_main();
-
+      //show everything on screen
+      gtk_widget_show_all(plug);
     }
 
 
@@ -292,9 +238,16 @@ int main(int argc, char *argv[]) {
 				
 	// Update grid
 	XYPos *newXY = serverMessage.avatar_turn.Pos;
+	if(avatarID==0)
+	  {
+	    updateGrid(mazeWidth, mazeHeight, grid, prevXY, newXY, numAvatars,
+		       avatarID, ignoreList);
+	  }
 	updateGrid(mazeWidth, mazeHeight, grid, prevXY, newXY, numAvatars,
 		   avatarID, ignoreList);
 
+	//check for any active signals
+	g_main_context_iteration(NULL, FALSE);
 	// Determine next move
 	int direction = determineNextMove(mazeWidth, mazeHeight, grid,
 					  prevXY, newXY, numAvatars, avatarID, ignoreList, &prevMove);
@@ -347,7 +300,7 @@ int main(int argc, char *argv[]) {
  *
  */
 void updateGrid(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth][mazeHeight], XYPos **prevXY, 
-		XYPos *newXY, int numAvatars, int avatarID, int *ignoreList, GtkWidget *widget) {
+		XYPos *newXY, int numAvatars, int avatarID, int *ignoreList) {
 
   // Loop through all avatars
   for (int i = 0; i < numAvatars; i++) {
@@ -374,43 +327,43 @@ void updateGrid(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth][mazeHeight]
 	    sprintf(ID,"%d",i);
 	    //might segfault
 	    //erase previous content in the cell
-	    gdk_draw_rectangle(PixMap,widget->style->white_gc,TRUE,newX*CELL_SIZE+1, newY*CELL_SIZE+1,CELL_SIZE-2, CELL_SIZE-2);
+	    gdk_draw_rectangle(PixMap,canvas->style->white_gc,TRUE,newX*CELL_SIZE+1, newY*CELL_SIZE+1,CELL_SIZE-2, CELL_SIZE-2);
 	
 	    //draw out the new position of avatar
-	    gdk_draw_text(PixMap,fixed_font,widget->style->white_gc,newX*CELL_SIZE+1, newY*CELL_SIZE+1,ID,1);
+	    gdk_draw_text(PixMap,fixed_font,canvas->style->white_gc,newX*CELL_SIZE+1, newY*CELL_SIZE+1,ID,1);
 	    free(ID);
 
 	    //erase previous content in the cell of previous position
-	    gdk_draw_rectangle(PixMap,widget->style->white_gc,TRUE,prevX*CELL_SIZE+1, prevY*CELL_SIZE+1,CELL_SIZE-2, CELL_SIZE-2);
+	    gdk_draw_rectangle(PixMap,canvas->style->white_gc,TRUE,prevX*CELL_SIZE+1, prevY*CELL_SIZE+1,CELL_SIZE-2, CELL_SIZE-2);
 	
 	    //draw out the trace
 	    //if trace pointing up
 	    if(grid[prevX][prevY]->traceDir==1)
 	      {
-		gdk_draw_text(PixMap,fixed_font,widget->style->white_gc,prevX*CELL_SIZE+1, prevY*CELL_SIZE+1,"\u2191",1);
+		gdk_draw_text(PixMap,fixed_font,canvas->style->white_gc,prevX*CELL_SIZE+1, prevY*CELL_SIZE+1,"\u2191",1);
 	      }
 
 	    //if trace pointing left
 	    else if(grid[prevX][prevY]->traceDir==0)
 	      {
-		gdk_draw_text(PixMap,fixed_font,widget->style->white_gc,prevX*CELL_SIZE+1, prevY*CELL_SIZE+1,"\u2190",1);
+		gdk_draw_text(PixMap,fixed_font,canvas->style->white_gc,prevX*CELL_SIZE+1, prevY*CELL_SIZE+1,"\u2190",1);
 	      }
 
 	    //if trace pointing right
 	    else if(grid[prevX][prevY]->traceDir==3)
 	      {
-		gdk_draw_text(PixMap,fixed_font,widget->style->white_gc,prevX*CELL_SIZE+1, prevY*CELL_SIZE+1,"\u2192",1);
+		gdk_draw_text(PixMap,fixed_font,canvas->style->white_gc,prevX*CELL_SIZE+1, prevY*CELL_SIZE+1,"\u2192",1);
 	      }
 
 	    //if trace pointing down
 	    else if(grid[prevX][prevY]->traceDir==2)
 	      {
-		gdk_draw_text(PixMap,fixed_font,widget->style->white_gc,prevX*CELL_SIZE+1, prevY*CELL_SIZE+1,"\u2193",1);
+		gdk_draw_text(PixMap,fixed_font,canvas->style->white_gc,prevX*CELL_SIZE+1, prevY*CELL_SIZE+1,"\u2193",1);
 	      }
 
 	    //send exposure signal to main function
-	    gtk_widget_queue_draw_area(widget, newX*CELL_SIZE, newY*CELL_SIZE,CELL_SIZE-2, CELL_SIZE-2);
-	    gtk_widget_queue_draw_area(widget, prevX*CELL_SIZE, prevY*CELL_SIZE,CELL_SIZE-2, CELL_SIZE-2);
+	    gtk_widget_queue_draw_area(canvas, newX*CELL_SIZE, newY*CELL_SIZE,CELL_SIZE-2, CELL_SIZE-2);
+	    gtk_widget_queue_draw_area(canvas, prevX*CELL_SIZE, prevY*CELL_SIZE,CELL_SIZE-2, CELL_SIZE-2);
 	  }
       }
       if(avatarID==0)
@@ -420,10 +373,10 @@ void updateGrid(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth][mazeHeight]
 	  sprintf(ID,"%d",i);
 	  //might segfault
 	  //draw out initial position of avatars
-	  gdk_draw_text(PixMap,fixed_font,widget->style->white_gc,newX*CELL_SIZE+1, newY*CELL_SIZE+1,ID,1);
+	  gdk_draw_text(PixMap,fixed_font,canvas->style->white_gc,newX*CELL_SIZE+1, newY*CELL_SIZE+1,ID,1);
 	  free(ID);
 	  //send exposure signal to main function
-	  gtk_widget_queue_draw_area(widget, newX*CELL_SIZE, newY*CELL_SIZE, CELL_SIZE-2, CELL_SIZE-2);
+	  gtk_widget_queue_draw_area(canvas, newX*CELL_SIZE, newY*CELL_SIZE, CELL_SIZE-2, CELL_SIZE-2);
 	}
     }
     //if the avatar didnt move, then draw a wall
@@ -559,6 +512,47 @@ int determineNextMove(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth][mazeH
   // Shouldn't get here
   return M_NULL_MOVE;
 
+}
+
+
+//create a new pixmap to do actual drawing, and to be exposed to drawingarea
+//for visualization.
+static gint configure_event (GtkWidget *widget, GdkEventConfigure *event)
+{
+  //check to see if it already exist
+  //if so, then dereference and remake pixmap
+  if (PixMap)
+    gdk_pixmap_unref(PixMap);
+
+  //create pixmap
+  PixMap = gdk_pixmap_new(widget->window,
+                          widget->allocation.width,
+                          widget->allocation.height,
+                          -1);
+
+  //clear the pixmap initially to white
+  gdk_draw_rectangle (PixMap,
+                      widget->style->white_gc,
+                      TRUE,
+                      0, 0,
+                      widget->allocation.width,
+                      widget->allocation.height);
+
+  return TRUE;
+}
+
+
+/* Redraw the screen from the backing pixmap */
+static gint expose_event (GtkWidget *widget, GdkEventExpose *event)
+{
+  gdk_draw_pixmap(widget->window,
+                  widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
+                  PixMap,
+                  event->area.x, event->area.y,
+                  event->area.x, event->area.y,
+                  event->area.width, event->area.height);
+
+  return FALSE;
 }
 
 void cleanup(int mazeWidth, int mazeHeight, Cell *grid[mazeWidth][mazeHeight], int numAvatars, 
