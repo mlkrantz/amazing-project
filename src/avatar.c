@@ -62,9 +62,6 @@ void logMovement(int direction, XYPos *newXY, FILE *log, int avatarID);
 
 int main(int argc, char *argv[]) {
 
-	printf("%s %s %s %s %s %s %s %s\n", argv[1], argv[2], argv[3], argv[4],
-	argv[5], argv[6], argv[7], argv[8]);
-
 	// Local variables
 	int avatarID = atoi(argv[1]);
 	int numAvatars = atoi(argv[2]);
@@ -137,7 +134,7 @@ int main(int argc, char *argv[]) {
 		cleanup(mazeWidth, mazeHeight, grid, numAvatars, prevXY);
 		exit(EXIT_FAILURE);
 	}
-	printf("Connection established!\n");
+	fprintf(stdout, "Avatar #%d: Connection established!\n", avatarID);
 
 	// Send ready message
 	AM_Message readyMsg;

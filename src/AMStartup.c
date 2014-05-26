@@ -267,7 +267,7 @@ int main(int argc, char *argv[]) {
 void childActions(int givenAvatarID, char *totAvatars, char *difficulty, char *IPaddr,
 	unsigned long givenMazePort, char *logFileName, unsigned long givenMazeWidth, unsigned long givenMazeHeight) {
 
-	fprintf(stderr, "Hello I'm a child and my PID is %d and my avatar ID is %d.\n", getpid(), givenAvatarID);
+	fprintf(stderr, "Just produced avatar with ID %d.\n", givenAvatarID);
 	int MPlen = getNumDigits(givenMazePort);
 	int MWlen = getNumDigits(givenMazeWidth);
 	int MHlen = getNumDigits(givenMazeHeight);
