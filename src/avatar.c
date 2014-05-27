@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
 		cleanup(mazeWidth, mazeHeight, grid, numAvatars, prevXY);
 		exit(EXIT_FAILURE);
 	}
-	fprintf(stderr, "Avatar #%d: Connection established!\n", avatarID);
+	fprintf(stdout, "Avatar #%d: Connection established!\n", avatarID);
 
 	// Send ready message
 	AM_Message readyMsg;
@@ -226,60 +226,63 @@ int main(int argc, char *argv[]) {
 
 				// Create an array for colors used for drawing
 				char* colorArray[10];
-				colorArray[0]="\033[22;31m"; // red
-				colorArray[1]="\033[22;32m"; // green
-				colorArray[2]="\033[22;33m"; //brown
-				colorArray[3]="\033[22;34m"; // blue
-				colorArray[4]="\033[22;35m"; // magenta
-				colorArray[5]="\033[22;36m"; // cyan
-				colorArray[6]="\033[22;37m"; // gray
-				colorArray[7]="\033[01;30m"; // dark gray
-				colorArray[8]="\033[01;31m"; // light red
-				colorArray[9]="\033[01;32m"; // light green
+				colorArray[0]="\033[22;31m";
+				colorArray[1]="\033[22;32m";
+				colorArray[2]="\033[22;33m";
+				colorArray[3]="\033[22;34m";
+				colorArray[4]="\033[22;35m";
+				colorArray[5]="\033[22;36m";
+				colorArray[6]="\033[22;37m";
+				colorArray[7]="\033[01;30m";
+				colorArray[8]="\033[01;31m";
+				colorArray[9]="\033[01;32m";
 
+				// Start ASCII drawing
 				if (avatarID == 0) {
-					// Start ASCII drawing
-	 				for(int h = 0; h <= mazeHeight + 1; h++) {
-	 				    for(int w = 0; w <= mazeWidth + 1; w++) {
-	 				    	// Check to see if the position is at the boundary
-	 						if(w == 0 || h == 0 || w == mazeWidth + 1 || h == mazeHeight + 1) {
-	 						    char* black="\033[22;30m";
-	 						    printf("%s* ",black);
-	 						}
-	 						// Draw avatar if in cell
-	 						else if (grid[w - 1][h - 1]->avatarNum > 0) {
-	 						    for (int i = 0; i < numAvatars; i++) {
-	 								if ((w-1) == ntohl(newXY[i].x) && (h-1) == ntohl(newXY[i].y)) {
-	 								    printf("%s%d ",colorArray[i],i);
-	 								    break;
-	 								} 					     
-	 						    }
-	 						}
-	 						// Draw corresponding trace
-	 						else if(grid[w - 1][h - 1]->traceDir==1) {
-	 						    printf("%s\u2191 ",colorArray[grid[w-1][h-1]->traceOrig]);
-	 						}
-	 						else if(grid[w - 1][h - 1]->traceDir==0) {
-	 					    	printf("%s\u2190 ",colorArray[grid[w-1][h-1]->traceOrig]);
-	 					  	}
-	 						else if(grid[w - 1][h - 1]->traceDir==3) {
-	 						    printf("%s\u2192 ",colorArray[grid[w-1][h-1]->traceOrig]);
-	 						}
-	 						else if(grid[w - 1][h - 1]->traceDir==2) {
-	 						    printf("%s\u2193 ",colorArray[grid[w-1][h-1]->traceOrig]);
-	 						}
-	 						// If empty cell, draw nothing
-	 						else {
-	 						    printf("  ");
-	 						}
-	 				    }
-	 				    // Start new line on new row
-	 				    printf("\n\033[0m");
-	 				}
-	 				// Sleep to slow down drawing
-	 				sleep(.6);
-		 		}	 
+				for (int h = 0; h <= mazeHeight + 1; h++) {
+					for (int w = 0; w <= mazeWidth + 1; w++) {
+						// Check to see if the position is at the boundary
+						if (w == 0 || h == 0 || w == mazeWidth + 1 || h == mazeHeight + 1) {
+							char* black="\033[22;30m";
+					    		printf("%s* ", black);
+					  	}
+						// Draw avatar if in cell
+						else if (grid[w-1][h-1]->avatarNum > 0) {
+					    		for (int i = 0; i < numAvatars; i++) {
+								if ((w-1) == ntohl(newXY[i].x) && (h - 1) == ntohl(newXY[i].y)) {
+						    			printf("%s%d ", colorArray[i],i);
+						    			break;
+						  		} 					     
+					      		}
+					  	}
+					
+						// Draw corresponding trace
+						else if (grid[w-1][h-1]->traceDir == 1) {
+					    		printf("%s\u2191 ", colorArray[grid[w-1][h-1]->traceOrig]);
+					  	}
+						else if (grid[w-1][h-1]->traceDir == 0) {
+					    		printf("%s\u2190 ", colorArray[grid[w-1][h-1]->traceOrig]);
+					  	}
+						else if (grid[w-1][h-1]->traceDir == 3) {
+					    		printf("%s\u2192 ", colorArray[grid[w-1][h-1]->traceOrig]);
+					  	}
+						else if (grid[w-1][h-1]->traceDir == 2) {
+					    		printf("%s\u2193 ", colorArray[grid[w-1][h-1]->traceOrig]);
+					  	}
 
+						// If empty cell, draw nothing
+						else {
+					    		printf("  ");
+					  	}
+				      	}
+				    	// Start new line on new row
+				   	printf("\n");
+				}
+				// Sleep
+				fflush(stdout);
+				sleep(.4);
+				}
+	     
 				// Determine next move
 				int direction = determineNextMove(mazeWidth, mazeHeight, grid,
 				prevXY, newXY, numAvatars, avatarID, ignoreList, &prevMove, 
