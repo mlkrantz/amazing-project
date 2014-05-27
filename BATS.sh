@@ -127,23 +127,27 @@ for ((i = 0; i < $num_tests; i++)); do
 	# print the expected result
 	printf "\nEXPECTED RESULT: \n${TEST_EXPD[i]}\n" >> $log_file
 	printf "\nSYSTEM OUTPUT: \n" >> $log_file
-	# run the command to get the system output
-	${TEST_CMD[i]}  >> $log_file  2>&1
-	if ((i == 11)); then
-		printf "\n\nExit status of testing program is $? (0 = success)\n" >> $log_file
-		printf "\n=========END: UNIT TESTING FUNCTIONS OF AVATAR=========" >> $log_file
-	fi
+
 	if ((i == 12)); then
+		${TEST_CMD[i]}  2>> $log_file 1>/dev/null
 		echo "" >> $log_file
 		tail -3 Amazing_$USER\_2_0.log >> $log_file
 		# remove avatar-produced logfile
 		rm -f Amazing_$USER\_2_0.log
-	fi
-	if ((i == 13)); then
+	elif ((i == 13)); then
+		${TEST_CMD[i]}  2>> $log_file 1>/dev/null
 		echo "" >> $log_file
 		tail -3 Amazing_$USER\_4_2.log >> $log_file
 		# remove avatar-produced logfile
 		rm -f Amazing_$USER\_4_2.log
+	else
+		# for all else, simply run the command to get the system output
+		${TEST_CMD[i]}  >> $log_file  2>&1
+	fi
+
+	if ((i == 11)); then
+		printf "\n\nExit status of testing program is $? (0 = success)\n" >> $log_file
+		printf "\n=========END: UNIT TESTING FUNCTIONS OF AVATAR=========" >> $log_file
 	fi
 
 	printf "\n---------------------------------------\n" >> $log_file
