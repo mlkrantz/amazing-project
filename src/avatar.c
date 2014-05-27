@@ -280,7 +280,7 @@ int main(int argc, char *argv[]) {
 					}
 					// Sleep to slow down drawing
 					fflush(stdout);
-					sleep(.4);
+					usleep(200000);
 				}
 	     
 				// Determine next move
