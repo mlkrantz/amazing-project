@@ -17,7 +17,6 @@
 
 // ---------------- Constants
 
-
 // ---------------- Structures/Types
 
 typedef struct Cell {
