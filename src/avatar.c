@@ -248,35 +248,35 @@ int main(int argc, char *argv[]) {
 						  	}
 							// Draw avatar if in cell
 							else if (grid[w-1][h-1]->avatarNum > 0) {
-						    	for (int i = 0; i < numAvatars; i++) {
+						    		for (int i = 0; i < numAvatars; i++) {
 									if ((w-1) == ntohl(newXY[i].x) && (h - 1) == ntohl(newXY[i].y)) {
-							    		printf("%s%d ", colorArray[i],i);
-							    		break;
+							    			printf("%s%d ", colorArray[i],i);
+							    			break;
 							  		} 					     
-						      	}
+						      		}
 						  	}
 						
 							// Draw corresponding trace
 							else if (grid[w-1][h-1]->traceDir == 1) {
-						    	printf("%s\u2191 ", colorArray[grid[w-1][h-1]->traceOrig]);
+						    		printf("%s\u2191 ", colorArray[grid[w-1][h-1]->traceOrig]);
 						  	}
 							else if (grid[w-1][h-1]->traceDir == 0) {
-						    	printf("%s\u2190 ", colorArray[grid[w-1][h-1]->traceOrig]);
+						    		printf("%s\u2190 ", colorArray[grid[w-1][h-1]->traceOrig]);
 						  	}
 							else if (grid[w-1][h-1]->traceDir == 3) {
-						    	printf("%s\u2192 ", colorArray[grid[w-1][h-1]->traceOrig]);
+						    		printf("%s\u2192 ", colorArray[grid[w-1][h-1]->traceOrig]);
 						  	}
 							else if (grid[w-1][h-1]->traceDir == 2) {
-						    	printf("%s\u2193 ", colorArray[grid[w-1][h-1]->traceOrig]);
+						    		printf("%s\u2193 ", colorArray[grid[w-1][h-1]->traceOrig]);
 						  	}
 
 							// If empty cell, draw nothing
 							else {
-						    	printf("  ");
-						  	}
-					    }
-					    // Start new line on new row
-					   	printf("\n\033[0m");
+						    		printf("  ");
+							}
+						}
+					    	// Start new line on new row
+						printf("\n\033[0m");
 					}
 					// Sleep to slow down drawing
 					fflush(stdout);
