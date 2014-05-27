@@ -239,6 +239,8 @@ int main(int argc, char *argv[]) {
 
 				// Start ASCII drawing
 				if (avatarID == 0) {
+					// Clear
+					printf("\033[2J\033[1;1H");
 					for (int h = 0; h <= mazeHeight + 1; h++) {
 						for (int w = 0; w <= mazeWidth + 1; w++) {
 							// Check to see if the position is at the boundary
