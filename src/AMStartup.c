@@ -261,8 +261,28 @@ int main(int argc, char *argv[]) {
 }
 
 
-/*
- * Executes the child program.
+
+ /*
+ * childActions: executes the child program (starts avatar)
+ * @givenAvatarID: ID of avatar to create
+ * @totAvatars: total number of avatars
+ * @difficulty: difficulty level of maze
+ * @IPaddr: IP address of server
+ * @givenMazePort: MazePort given by server
+ * @logFileName: name of log file to which avatars will append information
+ * @givenMazeWidth: width of maze
+ * @givenMazeHeight: height of maze
+ *
+ * Does not return anything; rather, given arguments for all parameters, executes avatar.
+ * (Implied that only child processes will call this function.)
+ * Example:
+ * 	int givenAvatarID;
+ *  char *totAvatars, *difficulty, *IPaddr, *logFileName;
+ *  unsigned long givenMazePort, givenMazeWidth, givenMazeHeight;
+ *
+ * 	childActions(givenAvatarID, totAvatars, difficulty, IPaddr, givenMazePort, logFileName, givenMazeWidth, givenMazeHeight);
+ *	// execute avatar
+ *
  */
 void childActions(int givenAvatarID, char *totAvatars, char *difficulty, char *IPaddr,
 	unsigned long givenMazePort, char *logFileName, unsigned long givenMazeWidth, unsigned long givenMazeHeight) {
@@ -295,8 +315,30 @@ void childActions(int givenAvatarID, char *totAvatars, char *difficulty, char *I
 
 
 
-/*
- * Forks parent process to produce one child. (Recursive.)
+ /*
+ * parentActions: Forks parent process to produce one child. (Recursive.)
+ * @childrenNeeded: number of child processes still needed
+ * @nextAvatarID: ID of avatar that will be created next
+ * @totAvatars: total number of avatars
+ * @difficulty: difficulty level of maze
+ * @IPaddr: IP address of server
+ * @givenMazePort: MazePort given by server
+ * @logFileName: name of log file to which avatars will append information
+ * @givenMazeWidth: width of maze
+ * @givenMazeHeight: height of maze
+ *
+ * Does not return anything; rather, given arguments for all parameters, creates child processes as long as
+ * there are more child processes needed.
+ * (Implied that only the main parent process will call this function.)
+ * Example:
+ * 	int childrenNeeded, nextAvatarID;
+ *  char *totAvatars, *difficulty, *IPaddr, *logFileName;
+ *  unsigned long givenMazePort, givenMazeWidth, givenMazeHeight;
+ *
+ * 	parentActions(childrenNeeded, nextAvatarID, totAvatars, difficulty, IPaddr, givenMazePort, logFileName,
+ *   givenMazeWidth, givenMazeHeight);
+ *	// MAKE NEW CHILD PROCESS(ES) 
+ *
  */
 void parentActions(int childrenNeeded, int nextAvatarID, char *totAvatars, char *difficulty, char *IPaddr,
 	unsigned long givenMazePort, char *logFileName, unsigned long givenMazeWidth, unsigned long givenMazeHeight) {
@@ -323,8 +365,25 @@ void parentActions(int childrenNeeded, int nextAvatarID, char *totAvatars, char 
 }
 
 
-/*
- * Check that arguments are valid. If successful return 1, else 0.
+ /*
+ * checkArgs: Checks arguments passed to AMStartup are valid.
+ * @argc: number of arguments
+ * @givenDifficulty: value passed into program as the difficulty level
+ * @givenNumAvatars: value passed into program as the number of avatars
+ *
+ * Returns 1 if successful, else 0.
+ * Checks for correct number of arguments, numerical integer values for difficulty and number of avatars,
+ * and checks that difficulty and number of avatars are within range.
+ * Example:
+ * 	// RECEIVE ARGUMENTS FROM MAIN FUNCTION
+ *	int argc;
+ *  char givenDifficulty[];
+ *	char givenNumAvatars[];
+ *
+ * 	int returnValue = checkArgs(argc, givenDifficulty, givenNumAvatars);
+ *	// IF RETURNVALUE == 1, ALL ARGUMENTS PASSED TESTS
+ *	// ELSE, EXIT
+ *
  */
 int checkArgs(int argc, char givenDifficulty[], char givenNumAvatars[]) {
 	if (argc != 7) {
@@ -361,8 +420,19 @@ int checkArgs(int argc, char givenDifficulty[], char givenNumAvatars[]) {
 }
 
 
+
 /*
- * Checks that a user input is numerical. Returns 1 if numerical, else 0.
+ * isNumerical: Checks that a user input is an integer.
+ * @inputToCheck: desired input to assess if integer
+ *
+ * Returns 1 if integer, else 0.
+ * Goes through each character of input and checks each character is a digit.
+ * Example:
+ *  char inputToCheck[];
+ *
+ * 	int returnValue = isNumerical(inputToCheck);
+ *	// IF RETURNVALUE == 1, INPUT IS AN INTEGER
+ *
  */
 int isNumerical(char inputToCheck[]) {
     for (int i = 0; i < strlen(inputToCheck); i++) {
@@ -373,8 +443,18 @@ int isNumerical(char inputToCheck[]) {
     return 1;
 }
 
+
 /*
- * Determines number of digits of unsigned long. Returns number of digits if successful, else 0.
+ * getNumDigits: Determines number of digits of a given unsigned long.
+ * @value: desired unsigned long input to assess number of digits
+ *
+ * Returns number of digits if successful, else 0.
+ * Example:
+ *  unsigned long value;
+ *
+ * 	int returnValue = getNumDigits(value);
+ *	// IF RETURNVALUE != 0, SUCCESS
+ *
  */
 int getNumDigits(unsigned long value) {
 	const int n = snprintf(NULL, 0, "%lu", value);
@@ -385,8 +465,15 @@ int getNumDigits(unsigned long value) {
 	return n;
 }
 
+
 /*
- * Prints help information, including version and usage.
+ * userHelp: Prints help information, including version and usage.
+ *
+ * Does not return anything; rather, prints project information including version and usage.
+ * Example:
+ *  // USER USES HELP OPTION
+ * 	userHelp();
+ *
  */
 void userHelp() {
 	printf("The Amazing Project\n");
