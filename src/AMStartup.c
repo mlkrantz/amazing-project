@@ -49,7 +49,6 @@ static const char USAGE[] = "Usage: ./AMStartup -n nAvatars -d Difficulty -h Hos
 
 // ---------------- Macro definitions
 #define VERBOSE 0 			// for debugging
-#define CHILD_EXEC "./avatar"
 #define NUM_EXEC_ARGS 9  	// number of arguments needed for CHILD_EXEC
 #define MAX_ID_LEN 1 		// max length of avatar ID
 
@@ -75,8 +74,8 @@ void userHelp();
 
 int main(int argc, char *argv[]) {
 	int help = 0;
-	int numAvatars;		// 1-AM_MAX_AVATAR
-	int difficulty;		// 0-AM_MAX_DIFFICULTY
+	int numAvatars = -1;		// 1-AM_MAX_AVATAR
+	int difficulty = -1;		// 0-AM_MAX_DIFFICULTY
 	char *hostname = NULL;
 	char *givenNumAvatars = NULL;
 	char *givenDifficulty = NULL;
@@ -127,7 +126,8 @@ int main(int argc, char *argv[]) {
     // for client-server communication
 	int sockfd;							// socket file descriptor
 	struct sockaddr_in serverAddr;
-	struct hostent *server;
+	struct hostent *server = NULL;
+	// server->h_addr_list == NULL;
 
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0){
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
 
 	// get info about server
 	server = gethostbyname(hostname);
-	if (server == NULL){
+	if (!server){
 		fprintf(stderr, "Error: Host, %s, is invalid.\n", hostname);
 		exit(EXIT_FAILURE);
 	}
@@ -225,7 +225,8 @@ int main(int argc, char *argv[]) {
     fprintf(logFile, "%s, %d, %s", userName, ntohl(serverMessage.init_ok.MazePort), asctime(timeinfo));
     fclose(logFile);
 
-    char *IPaddr = server->h_addr_list[0];
+	char *IPaddr = NULL;
+    IPaddr = server->h_addr_list[0];
     // make child processes
     int childrenNeeded = numAvatars;
     pid_t pID;
@@ -292,18 +293,41 @@ void childActions(int givenAvatarID, char *totAvatars, char *difficulty, char *I
 	int MWlen = getNumDigits(givenMazeWidth);
 	int MHlen = getNumDigits(givenMazeHeight);
 
+	char *childExec = "./avatar";
 	char *avatarID = calloc(MAX_ID_LEN + 1, sizeof(char));
+	if (!avatarID) {
+		fprintf(stderr, "Error: Couldn't allocate memory for an avatar ID.\n");
+		exit(EXIT_FAILURE);
+	}
 	char *mazePort = calloc(MPlen + 1, sizeof(char));
+	if (!mazePort) {
+		fprintf(stderr, "Error: Couldn't allocate memory for maze port.\n");
+		free(avatarID);
+		exit(EXIT_FAILURE);
+	}
 	char *mazeWidth = calloc(MWlen + 1, sizeof(char));
+	if (!mazeWidth) {
+		fprintf(stderr, "Error: Couldn't allocate memory for maze width.\n");
+		free(avatarID);
+		free(mazePort);
+		exit(EXIT_FAILURE);
+	}
 	char *mazeHeight = calloc(MHlen + 1, sizeof(char));
+	if (!mazeHeight) {
+		fprintf(stderr, "Error: Couldn't allocate memory for maze height.\n");
+		free(avatarID);
+		free(mazePort);
+		free(mazeHeight);
+		exit(EXIT_FAILURE);
+	}
 	sprintf(avatarID, "%d", givenAvatarID);
 	sprintf(mazePort, "%lu", givenMazePort);
 	sprintf(mazeWidth, "%lu", givenMazeWidth);
 	sprintf(mazeHeight, "%lu", givenMazeHeight);
 
-	char *childArgs[NUM_EXEC_ARGS + 1] = {CHILD_EXEC, avatarID, totAvatars, difficulty, IPaddr, mazePort,
+	char *childArgs[NUM_EXEC_ARGS + 1] = {childExec, avatarID, totAvatars, difficulty, IPaddr, mazePort,
 		logFileName, mazeWidth, mazeHeight, NULL};
-	if (execve(CHILD_EXEC, childArgs, NULL) == -1) {
+	if (execve(childExec, childArgs, NULL) == -1) {
 		free(avatarID);
 		free(mazePort);
 		free(mazeWidth);
