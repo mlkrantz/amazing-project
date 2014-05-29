@@ -1,0 +1,276 @@
+---------------------------------------------------
+
+========== TESTING AMStartup with avatar ==========
+
+---------------------------------------------------
+
+
+
+-----------------------------------------
+Date: Wed May 28 19:24:47 EDT 2014
+=========================================
+
+Hostname: tahoe.cs.dartmouth.edu
+Operating System: GNU/Linux
+
+Build start: Wed May 28 19:24:47 EDT 2014
+
+Building library
+Building avatar
+Building testing
+Building AMStartup
+
+Build end: Wed May 28 19:24:47 EDT 2014
+
+=========================================
+
+Testing with no arguments
+
+./AMStartup
+
+EXPECTED RESULT: 
+Usage: ./AMStartup -n nAvatars -d Difficulty -h Hostname [--help]
+
+SYSTEM OUTPUT: 
+Usage: ./AMStartup -n nAvatars -d Difficulty -h Hostname [--help]
+
+---------------------------------------
+Testing with invalid option
+
+./AMStartup -b
+
+EXPECTED RESULT: 
+./AMStartup: invalid option -- 'b'
+Usage: ./AMStartup -n nAvatars -d Difficulty -h Hostname [--help]
+
+SYSTEM OUTPUT: 
+./AMStartup: invalid option -- 'b'
+Usage: ./AMStartup -n nAvatars -d Difficulty -h Hostname [--help]
+
+---------------------------------------
+Testing --help
+
+./AMStartup --help
+
+EXPECTED RESULT: 
+The Amazing Project
+Component: AMStartup
+Version 1.0
+Usage: ./AMStartup -n nAvatars -d Difficulty -h Hostname [--help]
+
+SYSTEM OUTPUT: 
+The Amazing Project
+Component: AMStartup
+Version 1.0
+Usage: ./AMStartup -n nAvatars -d Difficulty -h Hostname [--help]
+
+---------------------------------------
+Testing with no option flags
+
+./AMStartup 2 0 pierce.cs.dartmouth.edu
+
+EXPECTED RESULT: 
+Usage: ./AMStartup -n nAvatars -d Difficulty -h Hostname [--help]
+
+SYSTEM OUTPUT: 
+Usage: ./AMStartup -n nAvatars -d Difficulty -h Hostname [--help]
+
+---------------------------------------
+Testing with insufficient number of arguments
+
+./AMStartup -n 2 -d 0
+
+EXPECTED RESULT: 
+Usage: ./AMStartup -n nAvatars -d Difficulty -h Hostname [--help]
+
+SYSTEM OUTPUT: 
+Usage: ./AMStartup -n nAvatars -d Difficulty -h Hostname [--help]
+
+---------------------------------------
+Testing with invalid number of avatars (ex. 11)
+
+./AMStartup -n 11 -d 0 -h pierce.cs.dartmouth.edu
+
+EXPECTED RESULT: 
+Error: Number of avatars must be an integer from 1 to 10
+
+SYSTEM OUTPUT: 
+Error: Number of avatars must be an integer from 1 to 10
+
+---------------------------------------
+Testing with non-integer number of avatars (ex. 5.6)
+
+./AMStartup -n 5.6 -d 0 -h pierce.cs.dartmouth.edu
+
+EXPECTED RESULT: 
+Error: Number of avatars must be an integer from 1 to 10
+
+SYSTEM OUTPUT: 
+Error: Number of avatars must be an integer from 1 to 10
+
+---------------------------------------
+Testing with non-numeric number of avatars (ex. g)
+
+./AMStartup -n g -d 0 -h pierce.cs.dartmouth.edu
+
+EXPECTED RESULT: 
+Error: Number of avatars must be an integer from 1 to 10
+
+SYSTEM OUTPUT: 
+Error: Number of avatars must be an integer from 1 to 10
+
+---------------------------------------
+Testing with invalid difficulty level (ex. 10)
+
+./AMStartup -n 1 -d 10 -h pierce.cs.dartmouth.edu
+
+EXPECTED RESULT: 
+Error: Difficulty must be an integer from 0 to 9
+
+SYSTEM OUTPUT: 
+Error: Difficulty must be an integer from 0 to 9
+
+---------------------------------------
+Testing with non-integer difficulty level (ex. 5.6)
+
+./AMStartup -n 1 -d 5.6 -h pierce.cs.dartmouth.edu
+
+EXPECTED RESULT: 
+Error: Difficulty must be an integer from 0 to 9
+
+SYSTEM OUTPUT: 
+Error: Difficulty must be an integer from 0 to 9
+
+---------------------------------------
+Testing with non-numeric difficulty level (ex. g)
+
+./AMStartup -n 1 -d g -h pierce.cs.dartmouth.edu
+
+EXPECTED RESULT: 
+Error: Difficulty must be an integer from 0 to 9
+
+SYSTEM OUTPUT: 
+Error: Difficulty must be an integer from 0 to 9
+
+---------------------------------------
+=========BEGIN: UNIT TESTING FUNCTIONS OF AVATAR=========
+
+EXPECTED RESULT: 
+Exit status of testing program is 0 (0 = success)
+
+SYSTEM OUTPUT: 
+Initializing the grid...
+Grid initialized! Width is 3, height is 3
+Initializing prev XY array...
+Array initialized with 2 avatars!
+
+Testing getPrevDir function...
+Avatar 0 was on cell (0, 0), now on cell (0, 1)
+Expected dir to be M_SOUTH (2), is 2
+Test passed!
+
+Testing logMovement function...
+Avatar 0, at position (0, 1), attempted to move South
+
+Pretending avatar 1 did not move...
+Avatar 1, at position (1, 0), stood still
+
+Test passed!
+
+Testing updateGrid function...
+Reinitializing prev XY array...
+Attempting to update avatar 1's grid
+
+Cell (0, 0) contains 0 avatar(s) and no trace
+Cell (0, 1) contains 1 avatar(s) and no trace
+Cell (0, 2) contains 0 avatar(s) and no trace
+Cell (1, 0) contains 1 avatar(s) and no trace
+Cell (1, 1) contains 0 avatar(s) and no trace
+Cell (1, 2) contains 0 avatar(s) and no trace
+Cell (2, 0) contains 0 avatar(s) and no trace
+Cell (2, 1) contains 0 avatar(s) and no trace
+Cell (2, 2) contains 0 avatar(s) and no trace
+
+Testing trace functionality of updateGrid...
+Moving avatar 1 from (1, 0) to (2, 0)...
+Moving avatar 0 from (0, 1) to (0, 2)...
+Attempting to update avatar 1's grid
+
+Cell (0, 0) contains 0 avatar(s) and no trace
+Cell (0, 1) contains 0 avatar(s) and a trace left by avatar 0 in direction 2
+Cell (0, 2) contains 1 avatar(s) and no trace
+Cell (1, 0) contains 0 avatar(s) and a trace left by avatar 1 in direction 3
+Cell (1, 1) contains 0 avatar(s) and no trace
+Cell (1, 2) contains 0 avatar(s) and no trace
+Cell (2, 0) contains 1 avatar(s) and no trace
+Cell (2, 1) contains 0 avatar(s) and no trace
+Cell (2, 2) contains 0 avatar(s) and no trace
+Test passed!
+
+Testing determineNextMove function...
+Determining the next move of avatar 0, at position (0, 2)...
+Expected dir to be M_NORTH (1), is 1
+Success!
+Avatar 0 now at position (0, 1)
+Attempting to move again, should turn left...
+Expected dir to be M_WEST (0), is 0
+Success!
+Pretending avatar 0 stood still, should turn right...
+Expected dir to be M_NORTH (1), is 1
+Success!
+Having avatar 0 follow its own trace...
+Avatar 0 followed a trace left by avatar 0
+Expected dir to be M_SOUTH (2), is 2
+Success!
+Test passed!
+
+Cleaning up and freeing memory...
+All memory was freed!
+
+
+Exit status of testing program is 0 (0 = success)
+
+=========END: UNIT TESTING FUNCTIONS OF AVATAR=========
+---------------------------------------
+Testing correct command line options, with 2 avatars at difficulty 0
+
+./AMStartup -n 2 -d 0 -h pierce.cs.dartmouth.edu
+
+EXPECTED RESULT: 
+Success! Solved maze of difficulty 0, with 2 avatars, in 79 moves.
+The hash returned by AM_MAZE_SOLVED is ___.
+Log file complete!
+
+SYSTEM OUTPUT: 
+Just produced avatar with ID 0.
+Just produced avatar with ID 1.
+Avatar #1: Connection established!
+Avatar #0: Connection established!
+
+Success! Solved maze of difficulty 0, with 2 avatars, in 79 moves.
+The hash returned by AM_MAZE_SOLVED is 615599443.
+Log file complete!
+---------------------------------------
+Testing correct command line options, with 4 avatars at difficulty 2
+
+./AMStartup -n 4 -d 2 -h pierce.cs.dartmouth.edu
+
+EXPECTED RESULT: 
+Success! Solved maze of difficulty 2, with 4 avatars, in 256 moves.
+The hash returned by AM_MAZE_SOLVED is ___.
+Log file complete!
+
+SYSTEM OUTPUT: 
+Just produced avatar with ID 0.
+Just produced avatar with ID 1.
+Just produced avatar with ID 2.
+Just produced avatar with ID 3.
+Avatar #2: Connection established!
+Avatar #1: Connection established!
+Avatar #0: Connection established!
+Avatar #3: Connection established!
+
+Success! Solved maze of difficulty 2, with 4 avatars, in 256 moves.
+The hash returned by AM_MAZE_SOLVED is 581206179.
+Log file complete!
+---------------------------------------
